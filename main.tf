@@ -181,8 +181,13 @@ resource "null_resource" "sync_website" {
   }
 
   provisioner "local-exec" {
-    command = "aws s3 sync website/ s3://${aws_s3_bucket.static.id}/ --acl public-read --profile tyler-personal-election " # TODO: make profile a variable
+    command = <<SCRIPT
+aws s3 sync website/ s3://${aws_s3_bucket.static.id}/ --acl public-read --profile tyler-personal-election
+aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.static_website_cdn.id} --paths /\* --profile tyler-personal-election
+SCRIPT
   }
+
+  depends_on = ["aws_cloudfront_distribution.static_website_cdn", "aws_s3_bucket.static"]
 }
 
 data "aws_acm_certificate" "static_ssl_cert" {
