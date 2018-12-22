@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Serverless Vote Online - DEMO</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+      const voterIdForm = document.getElementById('voting-form');
+      const votingSection = document.getElementById('voting-section');
+      const resultsSection = document.getElementById('results-section');
+
+      voterIdForm.addEventListener('submit', event => {
+        event.preventDefault();
+
+        let voteEvent = {
+          voter_id: document.getElementsByName('input-voter-id')[0].value,
+          candidate: document.querySelector('input[name=input-candidate]:checked').value
+        };
+
+        console.log('Submitting...');
+        console.log(voteEvent);
+
+        fetch('https://api.election.tylerpearson.cloud/votes', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(voteEvent)
+          })
+          .then(function (res) {
+            return res.json();
+          })
+          .then(function (data) {
+            const responseHeader = document.querySelector('#response-header');
+            responseHeader.innerHTML = "Success: " + data.success;
+
+            const responseMessage = document.querySelector('#response-message');
+            responseMessage.innerHTML = data.message;
+
+            votingSection.classList.toggle('hide');
+            resultsSection.classList.toggle('hide');
+          })
+
+      });
+
+    });
+  </script>
+
+  <style>
+    .divider {
+      margin: 45px 0;
+    }
+    @media only screen and (min-width: 993px) {
+      .container {
+          width: 50%;
+      }
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="nav-wrapper">
+    <a href="#" class="brand-logo center"><i class="material-icons">cloud</i> Serverless Vote Online - DEMO</a>
+    <ul id="nav-mobile" class="left hide-on-med-and-down">
+      <li><a href="/">Vote</a></li>
+      <li><a href="https://api.election.tylerpearson.cloud/votes">Results</a></li>
+    </ul>
+  </div>
+</nav>
+<div class="container">
+
+  <div id="voting-section">
+
+    <div class="row">
+
+      <div class="section">
+        <p>This is a demo of how a national election could be done with a multi-region active-active serverless setup on AWS.</p>
+        <p>The AWS services used include Lambda, API Gateway, Route 53, DynamoDB, S3, Cloudfront, Cloudwatch, KMS, and SQS. The Terraform templates and code used is at <a href="https://github.com/tylerpearson/election-on-aws">github.com/tylerpearson/election-on-aws</a>.</p>
+
+        <p>A JSON API endpoint with realtime results is located at <a href="https://api.election.tylerpearson.cloud/votes">api.election.tylerpearson.cloud/votes</a>.</p>
+
+        <div class="divider"></div>
+        <form id="voting-form" action="#">
+          <h5>What is your voter id?</h5>
+          <p>
+            <input id="input-voter-id" type="text" name="input-voter-id" class="validate" placeholder="xxxxx-xxxxx-xxxxx">
+            <label for="input-voter-id">Voter ID</label>
+          </p>
+          <h5>Select a candidate:</h5>
+          <p>
+            <label>
+              <input name="input-candidate" type="radio" value="Donald Trump" />
+              <span>Donald Trump</span>
+            </label>
+          </p>
+          <p>
+            <label>
+              <input name="input-candidate" type="radio" value="Hillary Clinton" />
+              <span>Hillary Clinton</span>
+            </label>
+          </p>
+          <p>
+            <label>
+              <input name="input-candidate" type="radio" value="Gary Johnson" />
+              <span>Gary Johnson</span>
+            </label>
+          </p>
+          <p>
+            <label>
+              <input name="input-candidate" type="radio" value="Jill Stein"  />
+              <span>Jill Stein</span>
+            </label>
+          </p>
+          <p>
+            <button class="btn waves-effect waves-light btn-large" type="submit" name="action">Submit Vote
+              <i class="material-icons right">done</i>
+            </button>
+          </p>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="results-section" class="hide">
+    <div class="row">
+      <div class="section center-align">
+        <h3 id="response-header"></h3>
+        <p id="response-message" class="flow-text"></p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
