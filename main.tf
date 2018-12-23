@@ -33,28 +33,22 @@ module "us_east_1" {
   source = "modules/region"
 
   zone_id = "${aws_route53_zone.voting_zone.id}"
+  api_subdomain = "${var.api_subdomain}"
 
   providers = {
     aws = "aws.us-east-1"
   }
 }
 
-output "us_east_1_invocation_url" {
-  value = "${module.us_east_1.invocation_url}"
-}
-
 module "us_west_1" {
   source = "modules/region"
 
   zone_id = "${aws_route53_zone.voting_zone.id}"
+  api_subdomain = "${var.api_subdomain}"
 
   providers = {
     aws = "aws.us-west-1"
   }
-}
-
-output "us_west_1_invocation_url" {
-  value = "${module.us_west_1.invocation_url}"
 }
 
 # Global

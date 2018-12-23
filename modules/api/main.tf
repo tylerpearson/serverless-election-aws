@@ -1,8 +1,3 @@
-variable "vote_create_lambda_function_name" {}
-variable "results_lambda_function_name" {}
-variable "zone_id" {}
-variable "cert_arn" {}
-
 data "aws_lambda_function" "vote_create_lambda" {
   function_name = "${var.vote_create_lambda_function_name}"
 }
@@ -35,6 +30,7 @@ resource "aws_api_gateway_resource" "resource" {
   rest_api_id = "${aws_api_gateway_rest_api.api.id}"
 }
 
+# Just reuse these existing module to get support for OPTIONS requests with JavaScript
 # https://github.com/squidfunk/terraform-aws-api-gateway-enable-cors
 module "cors" {
   source  = "github.com/squidfunk/terraform-aws-api-gateway-enable-cors"
@@ -83,7 +79,7 @@ data "aws_route53_zone" "voting_zone" {
 
 resource "aws_api_gateway_domain_name" "gw_domain_name" {
   regional_certificate_arn = "${var.cert_arn}"
-  domain_name              = "api.${replace(data.aws_route53_zone.voting_zone.name, "/[.]$/", "")}"
+  domain_name              = "${var.api_subdomain}.${replace(data.aws_route53_zone.voting_zone.name, "/[.]$/", "")}"
 
   endpoint_configuration {
     types = ["REGIONAL"]
@@ -100,7 +96,7 @@ resource "aws_route53_record" "api" {
   name           = "${aws_api_gateway_domain_name.gw_domain_name.domain_name}"
   type           = "A"
   zone_id        = "${var.zone_id}"
-  set_identifier = "api-${data.aws_region.current.name}"
+  set_identifier = "${var.api_subdomain}-${data.aws_region.current.name}"
 
   alias {
     evaluate_target_health = false

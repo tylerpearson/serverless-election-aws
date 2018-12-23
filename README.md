@@ -8,6 +8,10 @@ A JSON API endpoint with real-time results is located at [api.election.tylerpear
 
 A blog post on how it all works is coming soon.
 
+## Architecture
+
+![Diagram](diagram.png?raw=true "Architecture")
+
 ## Structure
 
 ```
@@ -31,6 +35,12 @@ A blog post on how it all works is coming soon.
 - `scripts` - Scripts for loading mock voters into the tables and doing load testing of voting
 - `website` - Static website in S3 with an example UI of how voters interact with the API.
 
-## Architecture
+## Terraform
 
-![Diagram](diagram.png?raw=true "Architecture")
+To use these Terraform templates:
+
+1. Change the config in `state.tf` to match the bucket, region, and profile you will be using to interact with the templates.
+1. Change variables in `variables.tf` to the domain configuration you plan on using.
+1. Run `terraform plan --var-file=variables.tfvars` and ensure the output matches what you expect.
+1. Run `terraform apply --var-file=variables.tfvars` to build the infrastructure.
+1. The website will be located at the output of `website_url`. The API is available at the output of `api_url`. To access the region-specific APIs, use the outputs of `invocation_url`.
