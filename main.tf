@@ -1,18 +1,15 @@
 locals {
-  api_subdomain = "api"
-  domain_name   = "tylerpearson.cloud"
-  project_zone  = "election"
-  static_domain = "${local.project_zone}.${local.domain_name}"
+  static_domain = "${var.project_subdomain}.${var.domain_name}"
 }
 
 data "aws_route53_zone" "root_domain" {
   provider = "aws.us-east-1"
-  name     = "${local.domain_name}." # move to a tfvars file
+  name     = "${var.domain_name}."
 }
 
 resource "aws_route53_zone" "voting_zone" {
   provider = "aws.us-east-1"
-  name     = "${local.project_zone}.${data.aws_route53_zone.root_domain.name}" # move to a tfvars file
+  name     = "${var.project_subdomain}.${data.aws_route53_zone.root_domain.name}"
 }
 
 resource "aws_route53_record" "voting_zone_ns" {
@@ -46,20 +43,6 @@ output "us_east_1_invocation_url" {
   value = "${module.us_east_1.invocation_url}"
 }
 
-# module "us_east_2" {
-#   source = "modules/region"
-
-#   zone_id = "${aws_route53_zone.voting_zone.id}"
-
-#   providers = {
-#     aws = "aws.us-east-2"
-#   }
-# }
-
-# output "us_east_2_invocation_url" {
-#   value = "${module.us_east_2.invocation_url}"
-# }
-
 module "us_west_1" {
   source = "modules/region"
 
@@ -74,24 +57,9 @@ output "us_west_1_invocation_url" {
   value = "${module.us_west_1.invocation_url}"
 }
 
-# module "us_west_2" {
-#   source = "modules/region"
-
-#   zone_id = "${aws_route53_zone.voting_zone.id}"
-
-#   providers = {
-#     aws = "aws.us-west-2"
-#   }
-# }
-
-# output "us_west_2_invocation_url" {
-#   value = "${module.us_west_2.invocation_url}"
-# }
-
 # Global
 
 resource "aws_dynamodb_global_table" "voters_global_table" {
-  # depends_on = ["module.us_east_1", "module.us_west_1", "module.us_east_2", "module.us_west_2"]
   depends_on = ["module.us_east_1", "module.us_west_1"]
   provider   = "aws.us-east-1"
 
@@ -101,21 +69,12 @@ resource "aws_dynamodb_global_table" "voters_global_table" {
     region_name = "us-east-1"
   }
 
-  # replica {
-  #   region_name = "us-east-2"
-  # }
-
   replica {
     region_name = "us-west-1"
   }
-
-  # replica {
-  #   region_name = "us-west-2"
-  # }
 }
 
 resource "aws_dynamodb_global_table" "results_global_table" {
-  # depends_on = ["module.us_east_1", "module.us_west_1", "module.us_east_2", "module.us_west_2"]
   depends_on = ["module.us_east_1", "module.us_west_1"]
   provider   = "aws.us-east-1"
 
@@ -125,17 +84,9 @@ resource "aws_dynamodb_global_table" "results_global_table" {
     region_name = "us-east-1"
   }
 
-  # replica {
-  #   region_name = "us-east-2"
-  # }
-
   replica {
     region_name = "us-west-1"
   }
-
-  # replica {
-  #   region_name = "us-west-2"
-  # }
 }
 
 # Website
@@ -243,7 +194,8 @@ resource "aws_cloudfront_distribution" "static_website_cdn" {
     geo_restriction {
       restriction_type = "none"
 
-      # This clould theoretically be restricted to the US for an election
+      # This clould theoretically be restricted to the US for an election,
+      # but wouldn't make sense to turn on for demo
       # restriction_type = "whitelist"
       # locations        = ["US"]
     }
@@ -255,7 +207,9 @@ resource "aws_cloudfront_distribution" "static_website_cdn" {
   }
   aliases = ["${local.static_domain}"]
 
-  # add a failover to secondary bucket here?
+  # add a failover to secondary bucket here when Terraform support available
+  # https://github.com/terraform-providers/terraform-provider-aws/issues/6547
+  # https://aws.amazon.com/about-aws/whats-new/2018/11/amazon-cloudfront-announces-support-for-origin-failover/
 }
 
 resource "aws_route53_record" "static_record" {
@@ -273,8 +227,4 @@ resource "aws_route53_record" "static_record" {
   }
 
   depends_on = ["aws_cloudfront_distribution.static_website_cdn"]
-}
-
-output "api_url" {
-  value = "https://${local.api_subdomain}.${local.project_zone}.${data.aws_route53_zone.root_domain.name}"
 }
