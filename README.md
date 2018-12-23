@@ -8,6 +8,6 @@ A JSON API endpoint with real-time results is located at [api.election.tylerpear
 
 A blog post on how it all works is coming soon.
 
-### Architecture
+## Architecture
 
 ![Diagram](diagram.png?raw=true "Architecture")
