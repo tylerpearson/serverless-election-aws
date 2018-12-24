@@ -8,9 +8,15 @@ The AWS services used include Lambda, API Gateway, Route 53, DynamoDB, S3, Cloud
 
 The Terraform templates and code used is at [github.com/tylerpearson/election-on-aws](https://github.com/tylerpearson/election-on-aws).
 
-A JSON API endpoint with real-time results is located at [api.election.tylerpearson.cloud/votes](https://api.election.tylerpearson.cloud/votes).
+## Blog post
 
-A blog post on how it all works is coming soon.
+A more in-depth writeup on how it all works is coming soon.
+
+## Website
+
+A static website hosted on S3 with a simple example UI of how voters interact with the API is located at https://election.tylerpearson.cloud.
+
+A JSON API endpoint with real-time results is located at https://api.election.tylerpearson.cloud/votes.
 
 ## Architecture diagram
 
