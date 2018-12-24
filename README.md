@@ -1,4 +1,6 @@
-# Serverless election with AWS
+# Serverless election on AWS
+
+## Description
 
 This is a demo of how a national election could be done with a multi-region active-active serverless setup on AWS. It follows the *scalable webhook pattern* [as described here](https://www.jeremydaly.com/serverless-microservice-patterns-for-aws/), where a SQS queue sits between two Lambda functions to act as a buffer for any bursts in requests or protect against any write throttling on DynamoDB tables. This ensures every vote is successfully saved.
 
@@ -10,11 +12,11 @@ A JSON API endpoint with real-time results is located at [api.election.tylerpear
 
 A blog post on how it all works is coming soon.
 
-## Architecture
+## Architecture diagram
 
 ![Diagram](diagram.png?raw=true "Architecture")
 
-## Structure
+## Directory structure
 
 ```
 .
