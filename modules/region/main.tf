@@ -1,8 +1,5 @@
 data "aws_region" "current" {}
 
-variable "zone_id" {}
-variable "api_subdomain" {}
-
 data "aws_route53_zone" "voting_zone" {
   zone_id = "${var.zone_id}"
 }
@@ -57,13 +54,5 @@ module "api" {
   cert_arn                         = "${aws_acm_certificate.cert.arn}"
   vote_create_lambda_function_name = "${module.lambda_functions.vote_create_lambda_function_name}"
   results_lambda_function_name     = "${module.lambda_functions.results_lambda_function_name}"
-  api_subdomain = "${var.api_subdomain}"
-}
-
-output "invocation_url" {
-  value = "${module.api.vote_create_lambda_invocation_url}"
-}
-
-output "api_resource" {
-  value = "${module.api.api_resource}"
+  api_subdomain                    = "${var.api_subdomain}"
 }

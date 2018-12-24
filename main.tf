@@ -32,7 +32,7 @@ resource "aws_route53_record" "voting_zone_ns" {
 module "us_east_1" {
   source = "modules/region"
 
-  zone_id = "${aws_route53_zone.voting_zone.id}"
+  zone_id       = "${aws_route53_zone.voting_zone.id}"
   api_subdomain = "${var.api_subdomain}"
 
   providers = {
@@ -43,7 +43,7 @@ module "us_east_1" {
 module "us_west_1" {
   source = "modules/region"
 
-  zone_id = "${aws_route53_zone.voting_zone.id}"
+  zone_id       = "${aws_route53_zone.voting_zone.id}"
   api_subdomain = "${var.api_subdomain}"
 
   providers = {

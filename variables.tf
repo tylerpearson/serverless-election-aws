@@ -14,5 +14,5 @@ variable "project_subdomain" {
 
 variable "aws_profile_name" {
   description = "Name of the AWS profile used"
-  default = "default"
+  default     = "default"
 }

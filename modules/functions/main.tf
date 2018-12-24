@@ -1,12 +1,3 @@
-variable "votes_sqs_arn" {}
-variable "votes_sqs_id" {}
-
-variable "voters_table_arn" {}
-variable "voters_table_name" {}
-
-variable "results_table_name" {}
-variable "results_table_arn" {}
-
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
