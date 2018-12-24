@@ -71,13 +71,5 @@ To use these Terraform templates:
 1. Run `terraform apply` to build the infrastructure.
 1. The website will be located at the output of `website_url`. The API is available at the output of `api_url`. To access the region-specific APIs, use the outputs of `invocation_url`.
 
-## Disclaimers
 
-- this doesn't take into whether an online election *should* be done, just how it *could* be done
-- the votes should absolutely be encrpyted
-- the simulation uses only 1% of the total count of votes cast in the 2016 Presidential election in an attempt to stay close to the free tier
-- in something as critical as a Presidential election, it would likely make sense to use all 4 regions that currently exist in the United States
-- it doesn't support write-in votes and assumes that the 4 presidential candidates are on the ballot in every state, which isn't the case
-
-## License
 
