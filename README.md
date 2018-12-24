@@ -6,7 +6,7 @@ This is a demo of how a national election could be done with a multi-region acti
 
 Currently, it uses `us-east-1` and `us-west-1`, but the Terraform templates can be easily adjusted to use more regions, if desired. [Latency-based routing](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-latency) is used in Route 53 to guide incoming requests to the user's closest AWS region.
 
-After the request comes into the region, [API Gateway](https://aws.amazon.com/api-gateway/) triggers a Lambda function that places the vote into an SQS queue. Downstream, a second Lambda function polls the SQS queue and saves the vote to the DynamoDB tables.
+After the request comes into the region, [API Gateway](https://aws.amazon.com/api-gateway/) triggers a Lambda function that places the vote into an SQS queue. Downstream, a second Lambda function polls the SQS queue and saves the vote to the DynamoDB tables. These Lambda functions use the recently announced [support for Ruby](https://aws.amazon.com/blogs/compute/announcing-ruby-support-for-aws-lambda/).
 
 There are two DynamoDB tables. The first is `voters`, which contains information on all registered voters, including their voter id and state. It contains information on each voter (e.g. name, address, and state). The partition key is the `voter_id` attribute, which is a unique id generated for each voter that they use to cast their votes. The `voters` table is also the *source of truth* for all votes -- when a vote is saved, the voter's item in the table is updated with the candidate they voted for and the time they voted. A `global secondary index` also exists on this table called `state-candidate-index`. This projects the state and candidate attributes so results can be queried without requiring a scan on a table that contains hundreds of millions of items when all registered voters in the United States are loaded into the `voters` table.
 
@@ -14,9 +14,15 @@ Additionally, there is a second DynamoDB table called `results` that contains a 
 
 The DynamoDB tables exist in each region and use [Global Tables](https://aws.amazon.com/dynamodb/global-tables/) to keep data in sync between regions. Auto-scaling is enabled to better handle fluctuations of reads and writes to each table.
 
+Logs are sent to Cloudwatch and can act as an audit trail of the votes that have been cast.
+
 The primary AWS services used in this setup are Lambda, API Gateway, Route 53, DynamoDB, S3, Cloudfront, Cloudwatch, KMS, and SQS.
 
 The Terraform templates and code used is at [github.com/tylerpearson/election-on-aws](https://github.com/tylerpearson/election-on-aws).
+
+## Election Day simulation
+
+The `scripts` directory contains
 
 ## Blog post
 
@@ -60,7 +66,18 @@ A JSON API endpoint with real-time results is located at https://api.election.ty
 To use these Terraform templates:
 
 1. Change the config in `state.tf` to match the bucket, region, and profile you will be using to interact with the templates.
-1. Change variables in `variables.tf` to the domain configuration you plan on using.
+1. Change variables in `terraform.tfvars` to what you matches your setup.
 1. Run `terraform plan` and ensure the output matches what you expect.
 1. Run `terraform apply` to build the infrastructure.
 1. The website will be located at the output of `website_url`. The API is available at the output of `api_url`. To access the region-specific APIs, use the outputs of `invocation_url`.
+
+## Disclaimers
+
+- this doesn't take into whether an online election *should* be done, just how it *could* be done
+- the votes should absolutely be encrpyted
+- the simulation uses only 1% of the total count of votes cast in the 2016 Presidential election in an attempt to stay close to the free tier
+- in something as critical as a Presidential election, it would likely make sense to use all 4 regions that currently exist in the United States
+- it doesn't support write-in votes and assumes that the 4 presidential candidates are on the ballot in every state, which isn't the case
+
+## License
+
