@@ -10,7 +10,7 @@ After the request comes into the region, [API Gateway](https://aws.amazon.com/ap
 
 There are two DynamoDB tables. The first is `voters`, which contains information on all registered voters, including their voter id and state. It contains information on each voter (e.g. name, address, and state). The partition key is the `voter_id` attribute, which is a unique id generated for each voter that they use to cast their votes. The `voters` table is also the *source of truth* for all votes -- when a vote is saved, the voter's item in the table is updated with the candidate they voted for and the time they voted. A `global secondary index` also exists on this table called `state-candidate-index`. This projects the state and candidate attributes so results can be queried without requiring a scan on a table that contains hundreds of millions of items when all registered voters in the United States are loaded into the `voters` table.
 
-Additionally, there is a second DynamoDB table called `results` that contains a summary of the number of votes each candidate recieved in each state and can be easily queried to get information on the results by state and candidate. A third Lambda function called `results` is hooked up to the API Gateway to expose a JSON response of the current results so they could theoretically be be viewed in real time (for example, if a state official wanted to view the number of votes cast at different points during Election Day).
+Additionally, there is a second DynamoDB table called `results` that contains a summary of the number of votes each candidate received in each state and can be easily queried to get information on the results by state and candidate. A third Lambda function called `results` is hooked up to the API Gateway to expose a JSON response of the current results so they could theoretically be be viewed in real time (for example, if a state official wanted to view the number of votes cast at different points during Election Day).
 
 The DynamoDB tables exist in each region and use [Global Tables](https://aws.amazon.com/dynamodb/global-tables/) to keep data in sync between regions. Auto-scaling is enabled to better handle fluctuations of reads and writes to each table.
 
@@ -71,5 +71,11 @@ To use these Terraform templates:
 1. Run `terraform apply` to build the infrastructure.
 1. The website will be located at the output of `website_url`. The API is available at the output of `api_url`. To access the region-specific APIs, use the outputs of `invocation_url`.
 
+## Disclaimers
 
+- This demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services. The web [is](https://www.chicagotribune.com/suburbs/highland-park/news/ct-hpn-election-integrity-forum-tl-1102-20171031-story.html) [full](https://engineering.stanford.edu/magazine/article/david-dill-why-online-voting-danger-democracy) [of](https://www.vox.com/policy-and-politics/2018/8/13/17683666/florida-voting-system-hack-children) [opinions](https://www.politico.com/story/2018/10/13/west-virginia-voting-app-security-846130), if you're looking for that.
+- While encryption at rest is enabled on all the services that support it, there currently isn't any sort of client-side encryption setup.
+- In something as critical as a Presidential election, it would likely make sense to use all four regions that currently exist in the United States. Tweak `main.tf` to add additional the regions.
+- The code currently doesn't support write-in votes and assumes that four presidential candidates are on the ballot in every state, which isn't the case.
+- While the results are broken down by state, this demo assumes shifting the management of the election to some sort of federal agency instead of a state responsibility.
 
