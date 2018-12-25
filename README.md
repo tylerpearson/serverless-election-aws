@@ -75,7 +75,7 @@ To use these Terraform templates:
 
 - This demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services. The web [is](https://www.chicagotribune.com/suburbs/highland-park/news/ct-hpn-election-integrity-forum-tl-1102-20171031-story.html) [full](https://engineering.stanford.edu/magazine/article/david-dill-why-online-voting-danger-democracy) [of](https://www.vox.com/policy-and-politics/2018/8/13/17683666/florida-voting-system-hack-children) [opinions](https://www.politico.com/story/2018/10/13/west-virginia-voting-app-security-846130), if you're looking for that.
 - While encryption at rest is enabled on all the services that support it, there currently isn't any sort of client-side encryption setup.
-- In something as critical as a Presidential election, it would likely make sense to use all four regions that currently exist in the United States. Tweak `main.tf` to add additional the regions.
+- In something as critical as a Presidential election, it would likely make sense to use all four regions that currently exist in the United States. Tweak `main.tf` to add additional regions.
 - The code currently doesn't support write-in votes and assumes that four presidential candidates are on the ballot in every state, which isn't the case.
-- While the results are broken down by state, this demo assumes shifting the management of the election to some sort of federal agency instead of a state responsibility.
+- While the results are broken down by state, this demo assumes shifting the management of the election to some sort of central federal agency that manages voting across the country instead of the individual states' responsibility.
 
