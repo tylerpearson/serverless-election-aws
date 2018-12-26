@@ -6,6 +6,10 @@ variable "results_lambda_function_name" {
   description = "Name of the function that shows the election results"
 }
 
+variable "health_check_lambda_function_name" {
+  description = "Name of the function that returns a health check"
+}
+
 variable "zone_id" {
   description = "Id of the Route 53 zone"
 }

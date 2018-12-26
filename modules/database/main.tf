@@ -81,15 +81,14 @@ resource "aws_dynamodb_table" "results_table" {
   }
 }
 
-
 # Read and write =autoscaling of tables
 
 module "voters_table_auto_scaling" {
-  source = "./auto_scaling"
+  source     = "./auto_scaling"
   table_name = "${aws_dynamodb_table.voters_table.name}"
 }
 
 module "results_table_auto_scaling" {
-  source = "./auto_scaling"
+  source     = "./auto_scaling"
   table_name = "${aws_dynamodb_table.results_table.name}"
 }
