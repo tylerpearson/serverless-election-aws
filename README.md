@@ -4,7 +4,7 @@
 
 This is a demo of how a national election could be done with a multi-region active-active serverless setup on AWS. It follows the *scalable webhook pattern* [as described here](https://www.jeremydaly.com/serverless-microservice-patterns-for-aws/), where a SQS queue sits between two Lambda functions to act as a buffer for any bursts in requests or protect against any write throttling on DynamoDB tables. This ensures every vote is successfully saved.
 
-Currently, it uses `us-east-1` and `us-west-1`, but the Terraform templates can be easily adjusted to use more regions, if desired. [Latency-based routing](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-latency) is used in Route 53 to guide incoming requests to the user's closest AWS region.
+Currently, it uses `us-east-1` and `us-west-1`, but the Terraform templates can be easily adjusted to use more regions, if desired. [Latency-based routing](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-latency) is used in Route 53 to guide incoming requests to the voters's closest AWS region. Route 53 health checks are in place to detect issues with the API and redirect traffic to another region, if neccessary.
 
 After the request comes into the region, [API Gateway](https://aws.amazon.com/api-gateway/) triggers a Lambda function that places the vote into an SQS queue. Downstream, a second Lambda function polls the SQS queue and saves the vote to the DynamoDB tables. These Lambda functions use the recently announced [support for Ruby](https://aws.amazon.com/blogs/compute/announcing-ruby-support-for-aws-lambda/).
 
@@ -14,25 +14,15 @@ Additionally, there is a second DynamoDB table called `results` that contains a 
 
 The DynamoDB tables exist in each region and use [Global Tables](https://aws.amazon.com/dynamodb/global-tables/) to keep data in sync between regions. Auto-scaling is enabled to better handle fluctuations of reads and writes to each table.
 
-Logs are sent to Cloudwatch and can act as an audit trail of the votes that have been cast.
+Logs are sent to CloudWatch and can act as an audit trail of the votes that have been cast.
 
-The primary AWS services used in this setup are Lambda, API Gateway, Route 53, DynamoDB, S3, Cloudfront, Cloudwatch, KMS, and SQS.
+The primary AWS services used in this setup are Lambda, API Gateway, Route 53, DynamoDB, S3, CloudFront, CloudWatch, KMS, and SQS.
 
-The Terraform templates and code used is at [github.com/tylerpearson/election-on-aws](https://github.com/tylerpearson/election-on-aws).
-
-## Election Day simulation
-
-The `scripts` directory contains
+The Terraform templates and code used is at [github.com/tylerpearson/serverless-election-aws](https://github.com/tylerpearson/serverless-election-aws).
 
 ## Blog post
 
 A more in-depth writeup on how it all works is coming soon.
-
-## Website
-
-A static website hosted on S3 with a simple example UI of how voters interact with the API is located at https://election.tylerpearson.cloud.
-
-A JSON API endpoint with real-time results is located at https://api.election.tylerpearson.cloud/votes.
 
 ## Architecture diagram
 
@@ -61,6 +51,34 @@ A JSON API endpoint with real-time results is located at https://api.election.ty
 - `scripts` - Scripts for loading mock voters into the tables and doing load testing of voting
 - `website` - Static website in S3 with an example UI of how voters interact with the API.
 
+## Election simulation
+
+The `scripts` directory contains a few Ruby scripts that can be used to load the DynamoDB tables with sample voters and voter file data. Additionally, there are scripts that are used to simulate voting that would occur on Election Day.
+
+```
+.
+├── Gemfile
+├── Gemfile.lock
+├── data/
+├── generate_registered_voters.rb
+├── generate_votes.rb
+├── load_registered_voters.rb
+└── populate_results_table.rb
+```
+
+- `Gemfile` - Script dependencies. Run `bundle install` before using the scripts to ensure the libraries are installed and ready to use.
+- `data` - A directory used to store data that the scripts will generate and consume.
+- `generate_registered_voters.rb` - Generates 1,366,692 sample voters with unique voter ids. This is 1% of the number of votes cast in the 2016 Presidential Election. Outputs to the `data` directory.
+- `load_registered_voters.rb` - Loads the sample voters generated in the above script into a DynamoDB table.
+- `populate_results_table.rb` - Populates the `results` table with base data on each state and candidate. As the votes are cast and the Lambda functions run, the counts are incremented.
+- `generate_votes.rb` - Simulates votes being cast for the 1,366,692 voters generated above. The votes cast in the simulation match the actual split of votes cast for each candidate in each state (but at 1% of what was actually cast).
+
+## Website
+
+A static website hosted on S3 with a simple example UI of how voters interact with the API is located at https://election.tylerpearson.cloud.
+
+A JSON API endpoint with real-time results is located at https://api.election.tylerpearson.cloud/votes.
+
 ## Terraform
 
 To use these Terraform templates:
@@ -74,8 +92,9 @@ To use these Terraform templates:
 ## Disclaimers
 
 - This demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services. The web [is](https://www.chicagotribune.com/suburbs/highland-park/news/ct-hpn-election-integrity-forum-tl-1102-20171031-story.html) [full](https://engineering.stanford.edu/magazine/article/david-dill-why-online-voting-danger-democracy) [of](https://www.vox.com/policy-and-politics/2018/8/13/17683666/florida-voting-system-hack-children) [opinions](https://www.politico.com/story/2018/10/13/west-virginia-voting-app-security-846130), if you're looking for that.
-- While encryption at rest is enabled on all the services that support it, there currently isn't any sort of client-side encryption setup.
+- While encryption at rest is enabled on all the services that support it, there currently isn't any sort of client-side encryption setup. SSL certificates are in place to help protect data in transit.
 - In something as critical as a Presidential election, it would likely make sense to use all four regions that currently exist in the United States. Tweak `main.tf` to add additional regions.
 - The code currently doesn't support write-in votes and assumes that four presidential candidates are on the ballot in every state, which isn't the case.
 - While the results are broken down by state, this demo assumes shifting the management of the election to some sort of central federal agency that manages voting across the country instead of the individual states' responsibility.
+- There's a ton of additional functionality and services that could be setup and used (CloudWatch alarms for notifications of issues, GuardDuty and CloudTrail for security, X-Ray for better visibility in the Lambda functions, etc.) that isn't included. I timeboxed many parts of this demo in the sake of time.
 
