@@ -6,9 +6,14 @@ data "aws_lambda_function" "results_lambda" {
   function_name = "${var.results_lambda_function_name}"
 }
 
+data "aws_lambda_function" "health_check_lambda" {
+  function_name = "${var.health_check_lambda_function_name}"
+}
+
 locals {
-  create_lambda_arn  = "${replace(data.aws_lambda_function.vote_create_lambda.arn, ":$LATEST", "")}"
-  results_lambda_arn = "${replace(data.aws_lambda_function.results_lambda.arn, ":$LATEST", "")}"
+  create_lambda_arn       = "${replace(data.aws_lambda_function.vote_create_lambda.arn, ":$LATEST", "")}"
+  results_lambda_arn      = "${replace(data.aws_lambda_function.results_lambda.arn, ":$LATEST", "")}"
+  health_check_lambda_arn = "${replace(data.aws_lambda_function.health_check_lambda.arn, ":$LATEST", "")}"
 }
 
 data "aws_region" "current" {}
@@ -92,17 +97,32 @@ resource "aws_api_gateway_base_path_mapping" "app" {
   domain_name = "${aws_api_gateway_domain_name.gw_domain_name.domain_name}"
 }
 
+resource "aws_route53_health_check" "health_check" {
+  reference_name    = "${data.aws_region.current.name} API Gateway check"
+  fqdn              = "${replace(replace(aws_api_gateway_deployment.api.invoke_url, "https://", ""), "/${aws_api_gateway_deployment.api.stage_name}", "")}"
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = "/${aws_api_gateway_deployment.api.stage_name}${aws_api_gateway_resource.health_check_resource.path}"
+  failure_threshold = "2"
+  request_interval  = "30"
+  measure_latency   = true
+  regions           = ["us-east-1", "us-west-1", "us-west-2"]                                                                                               # us-east-2 isn't a supported region for health check in the US
+}
+
 resource "aws_route53_record" "api" {
   name           = "${aws_api_gateway_domain_name.gw_domain_name.domain_name}"
   type           = "A"
   zone_id        = "${var.zone_id}"
   set_identifier = "${var.api_subdomain}-${data.aws_region.current.name}"
 
+  # https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-latency-alias.html#rrsets-values-latency-alias-evaluate-target-health
   alias {
-    evaluate_target_health = false
+    evaluate_target_health = true
     name                   = "${aws_api_gateway_domain_name.gw_domain_name.regional_domain_name}"
     zone_id                = "${aws_api_gateway_domain_name.gw_domain_name.regional_zone_id}"
   }
+
+  health_check_id = "${aws_route53_health_check.health_check.id}"
 
   latency_routing_policy {
     region = "${data.aws_region.current.name}"
@@ -131,4 +151,34 @@ resource "aws_lambda_permission" "get_all_apigw_lambda" {
   function_name = "${data.aws_lambda_function.results_lambda.function_name}"
   principal     = "apigateway.amazonaws.com"
   source_arn    = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method_get_all.http_method}${aws_api_gateway_resource.resource.path}"
+}
+
+resource "aws_api_gateway_resource" "health_check_resource" {
+  path_part   = "health"
+  parent_id   = "${aws_api_gateway_rest_api.api.root_resource_id}"
+  rest_api_id = "${aws_api_gateway_rest_api.api.id}"
+}
+
+resource "aws_api_gateway_method" "method_health_check" {
+  rest_api_id   = "${aws_api_gateway_rest_api.api.id}"
+  resource_id   = "${aws_api_gateway_resource.health_check_resource.id}"
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "health_check_integration" {
+  rest_api_id             = "${aws_api_gateway_rest_api.api.id}"
+  resource_id             = "${aws_api_gateway_resource.health_check_resource.id}"
+  http_method             = "${aws_api_gateway_method.method_health_check.http_method}"
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${local.health_check_lambda_arn}/invocations"
+}
+
+resource "aws_lambda_permission" "health_check_apigw_lambda" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = "${data.aws_lambda_function.health_check_lambda.function_name}"
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method_health_check.http_method}${aws_api_gateway_resource.health_check_resource.path}"
 }

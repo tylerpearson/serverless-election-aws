@@ -7,7 +7,7 @@ output "us_west_1_invocation_url" {
 }
 
 output "api_url" {
-  value = "https://${var.api_subdomain}.${local.static_domain}/${module.us_east_1.api_resource}"
+  value = "https://${var.api_subdomain}.${local.static_domain}${module.us_east_1.api_resource}"
 }
 
 output "website_url" {

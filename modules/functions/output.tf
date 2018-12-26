@@ -13,3 +13,11 @@ output "results_lambda_arn" {
 output "results_lambda_function_name" {
   value = "${aws_lambda_function.results_lambda.function_name}"
 }
+
+output "health_check_lambda_arn" {
+  value = "${aws_lambda_function.health_check_lambda.arn}"
+}
+
+output "health_check_lambda_function_name" {
+  value = "${aws_lambda_function.health_check_lambda.function_name}"
+}

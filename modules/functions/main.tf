@@ -207,7 +207,7 @@ resource "aws_lambda_function" "results_lambda" {
   runtime          = "ruby2.5"
   handler          = "function.handler"
   source_code_hash = "${data.archive_file.results_files.output_base64sha256}"
-  timeout          = "300"
+  timeout          = "30"
 
   environment {
     variables = {
@@ -263,4 +263,65 @@ resource "aws_iam_role_policy" "vote_results_role_policy_lambda" {
   name   = "${aws_iam_role.results_lambda.name}-policy"
   role   = "${aws_iam_role.results_lambda.id}"
   policy = "${data.aws_iam_policy_document.results_lambda_policy.json}"
+}
+
+# Health Check
+
+resource "aws_cloudwatch_log_group" "health_check_lambda_log_group" {
+  name = "/aws/lambda/${aws_lambda_function.health_check_lambda.function_name}"
+
+  # kms_key_id = "alias/aws/cloudwatch"
+}
+
+data "archive_file" "health_check_files" {
+  type        = "zip"
+  source_dir  = "${path.module}/health_check/index"
+  output_path = "${path.module}/health_check/files/${data.aws_region.current.name}/index.zip"
+}
+
+resource "aws_lambda_function" "health_check_lambda" {
+  filename         = "${path.module}/health_check/files/${data.aws_region.current.name}/index.zip"
+  function_name    = "health_check_function"
+  role             = "${aws_iam_role.health_check_lambda.arn}"
+  runtime          = "ruby2.5"
+  handler          = "function.handler"
+  source_code_hash = "${data.archive_file.health_check_files.output_base64sha256}"
+  timeout          = "30"
+}
+
+data "aws_iam_policy_document" "health_check_lambda_policy" {
+  statement {
+    actions = [
+      "logs:PutLogEvents",
+      "logs:CreateLogStream",
+    ]
+
+    resources = [
+      "${aws_cloudwatch_log_group.health_check_lambda_log_group.arn}",
+    ]
+  }
+}
+
+resource "aws_iam_role" "health_check_lambda" {
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "health_check_role_policy_lambda" {
+  name   = "${aws_iam_role.health_check_lambda.name}-policy"
+  role   = "${aws_iam_role.health_check_lambda.id}"
+  policy = "${data.aws_iam_policy_document.health_check_lambda_policy.json}"
 }

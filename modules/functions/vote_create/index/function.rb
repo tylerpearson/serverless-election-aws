@@ -3,8 +3,6 @@ require 'time'
 require 'aws-sdk-sqs'
 require 'aws-sdk-dynamodb'
 
-
-# CloudFront-Viewer-Country: XX
 def handler(event:, context:)
   event_body = JSON.parse(event['body'])
 
