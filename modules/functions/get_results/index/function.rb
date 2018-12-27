@@ -19,9 +19,12 @@ def handler(event:, context:)
   results = []
 
   state_array.each do |state|
-    state_results = scan_output.items.select { |item| item['state'] == state }
+    state_results = scan_output.items
+                      .select { |item| item['state'] == state }
+                      .map { |item| { candidate: item['candidate'], count: item['count'].to_i } }
     results << { state: state,
-                 results: state_results.map { |item| { candidate: item['candidate'], count: item['count'].to_i } } }
+                 total_count: state_results.inject(0) { |s, h| s + h[:count] },
+                 results: state_results }
   end
 
   response = {
