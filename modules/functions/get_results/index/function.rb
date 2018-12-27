@@ -19,11 +19,22 @@ def handler(event:, context:)
   results = []
 
   state_array.each do |state|
-    state_results = scan_output.items
-                      .select { |item| item['state'] == state }
-                      .map { |item| { candidate: item['candidate'], count: item['count'].to_i } }
+    state_results = scan_output.items.select { |item| item['state'] == state }
+
+    state_results =  state_results.map do |item|
+                        { candidate: item['candidate'],
+                          count: item['count'].to_i }
+                      end
+
+    total_count = state_results.inject(0) { |s, h| s + h[:count] }
+
+    state_results = state_results.map do |state|
+      state.merge!({ percentage: "#{((state[:count].to_f / total_count.to_f) * 100.0).round}%" })
+    end
+
     results << { state: state,
-                 total_count: state_results.inject(0) { |s, h| s + h[:count] },
+                 disclaimer: "These vote counts are estimates. Visit https://github.com/tylerpearson/serverless-election-aws for more info.",
+                 total_count: total_count,
                  results: state_results }
   end
 
