@@ -1,5 +1,5 @@
-data "aws_lambda_function" "vote_create_lambda" {
-  function_name = "${var.vote_create_lambda_function_name}"
+data "aws_lambda_function" "vote_enqueuer_lambda" {
+  function_name = "${var.vote_enqueuer_lambda_function_name}"
 }
 
 data "aws_lambda_function" "results_lambda" {
@@ -11,9 +11,9 @@ data "aws_lambda_function" "health_check_lambda" {
 }
 
 locals {
-  create_lambda_arn       = "${replace(data.aws_lambda_function.vote_create_lambda.arn, ":$LATEST", "")}"
-  results_lambda_arn      = "${replace(data.aws_lambda_function.results_lambda.arn, ":$LATEST", "")}"
-  health_check_lambda_arn = "${replace(data.aws_lambda_function.health_check_lambda.arn, ":$LATEST", "")}"
+  vote_enqueuer_lambda_arn = "${replace(data.aws_lambda_function.vote_enqueuer_lambda.arn, ":$LATEST", "")}"
+  results_lambda_arn       = "${replace(data.aws_lambda_function.results_lambda.arn, ":$LATEST", "")}"
+  health_check_lambda_arn  = "${replace(data.aws_lambda_function.health_check_lambda.arn, ":$LATEST", "")}"
 }
 
 data "aws_region" "current" {}
@@ -67,13 +67,13 @@ resource "aws_api_gateway_integration" "integration" {
   http_method             = "${aws_api_gateway_method.method.http_method}"
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${local.create_lambda_arn}/invocations"
+  uri                     = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${local.vote_enqueuer_lambda_arn}/invocations"
 }
 
 resource "aws_lambda_permission" "apigw_lambda" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = "${data.aws_lambda_function.vote_create_lambda.function_name}"
+  function_name = "${data.aws_lambda_function.vote_enqueuer_lambda.function_name}"
   principal     = "apigateway.amazonaws.com"
   source_arn    = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method.http_method}${aws_api_gateway_resource.resource.path}"
 }
@@ -106,7 +106,7 @@ resource "aws_route53_health_check" "health_check" {
   failure_threshold = "2"
   request_interval  = "30"
   measure_latency   = true
-  regions           = ["us-east-1", "us-west-1", "us-west-2"]                                                                                               # us-east-2 isn't a supported region for health check in the US
+  regions           = ["us-east-1", "us-west-1", "us-west-2"]                                                                                               # restrict the regions this checks from                                                                                            # us-east-2 isn't a supported region for health check in the US
 }
 
 resource "aws_route53_record" "api" {

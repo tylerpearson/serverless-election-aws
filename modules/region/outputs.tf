@@ -1,5 +1,5 @@
 output "invocation_url" {
-  value = "${module.api.vote_create_lambda_invocation_url}"
+  value = "${module.api.vote_enqueuer_lambda_invocation_url}"
 }
 
 output "api_resource" {

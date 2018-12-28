@@ -1,4 +1,4 @@
-variable "vote_create_lambda_function_name" {
+variable "vote_enqueuer_lambda_function_name" {
   description = "Name of the function that sends the incoming votes to the queue"
 }
 

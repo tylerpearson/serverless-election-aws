@@ -1,9 +1,9 @@
-output "vote_create_lambda_arn" {
-  value = "${aws_lambda_function.vote_create_lambda.arn}"
+output "vote_enqueuer_lambda_arn" {
+  value = "${aws_lambda_function.vote_enqueuer_lambda.arn}"
 }
 
-output "vote_create_lambda_function_name" {
-  value = "${aws_lambda_function.vote_create_lambda.function_name}"
+output "vote_enqueuer_lambda_function_name" {
+  value = "${aws_lambda_function.vote_enqueuer_lambda.function_name}"
 }
 
 output "results_lambda_arn" {
