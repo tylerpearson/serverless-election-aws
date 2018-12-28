@@ -1,6 +1,21 @@
-# Serverless election on AWS
+# The U.S. National Presidential Election on AWS with Serverless
 
-## Description
+- [Overview](#overview)
+- [Instructions](#instructions)
+- [Architecture](#architecture)
+- [Directory structure](#directory-structure)
+- [Implementation details](#implementation-details)
+  - [Amazon DynamoDB](#amazon-dynamodb)
+  - [Amazon API Gateway](#amazon-api-gateway)
+  - [AWS Lambda](#aws-lambda)
+  - [AWS IAM](#aws-iam)
+  - [Amazon CloudFront and Amazon S3](#amazon-cloudfront-and-amazon-s3)
+  - [Amazon VPC](#amazon-vpc)
+  - [Amazon CloudWatch](#amazon-cloudwatch)
+- [Disclaimers](#disclaimers)
+
+
+## Overview
 
 This is a demo of how a national election could be done with a multi-region active-active serverless setup on AWS. It follows the *scalable webhook pattern* [as described here](https://www.jeremydaly.com/serverless-microservice-patterns-for-aws/), where a SQS queue sits between two Lambda functions to act as a buffer for any bursts in requests or protect against any write throttling on DynamoDB tables. This ensures every vote is successfully saved.
 
@@ -20,11 +35,21 @@ The primary AWS services used in this setup are Lambda, API Gateway, Route 53, D
 
 The Terraform templates and code used is at [github.com/tylerpearson/serverless-election-aws](https://github.com/tylerpearson/serverless-election-aws).
 
-## Blog post
+## Instructions
 
-A more in-depth writeup on how it all works is coming soon.
+To use these Terraform templates:
 
-## Architecture diagram
+1. Make sure Terraform is installed and up-to-date by running `terraform --version`. [Visit here for instructions](https://learn.hashicorp.com/terraform/getting-started/install.html) on how to install Terraform.
+1. Change the config in `state.tf` to match the bucket, region, and profile you will be using to interact with the templates.
+1. Change variables in `terraform.tfvars` to what matches your setup.
+1. Run `terraform init` to initialize the required dependencies.
+1. Run `terraform plan` and double check that the output matches what you expect.
+1. Run `terraform apply` to build the infrastructure.
+1. The website will be located at the output of `website_url`. The API is available at the output of `api_url`. To access the region-specific APIs, use the outputs of `invocation_url`.
+
+To destroy everything created above, run `terraform destroy`. Note that there are costs associated with these resources if they are left on.
+
+## Architecture
 
 ![Diagram](diagram.png?raw=true "Architecture")
 
@@ -80,16 +105,6 @@ The `scripts` directory contains a few Ruby scripts that can be used to load the
 A static website hosted on S3 with a simple example UI of how voters interact with the API is located at https://election.tylerpearson.cloud.
 
 A JSON API endpoint with real-time results is located at https://api.election.tylerpearson.cloud/votes.
-
-## Terraform
-
-To use these Terraform templates:
-
-1. Change the config in `state.tf` to match the bucket, region, and profile you will be using to interact with the templates.
-1. Change variables in `terraform.tfvars` to what you matches your setup.
-1. Run `terraform plan` and ensure the output matches what you expect.
-1. Run `terraform apply` to build the infrastructure.
-1. The website will be located at the output of `website_url`. The API is available at the output of `api_url`. To access the region-specific APIs, use the outputs of `invocation_url`.
 
 ## Disclaimers
 

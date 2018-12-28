@@ -6,6 +6,8 @@ require 'faker'
 dynamodb = Aws::DynamoDB::Client.new(region: 'us-west-1',
                                      profile: 'tyler-personal-election')
 
+VOTERS_FILE_NAME = 'voters.json'
+
 # Total nubmer of votes cast in 2016 for the Presidential election
 TOTAL_VOTES_2016 = 136_669_237
 SAMPLE_TOTAL_VOTES = (TOTAL_VOTES_2016 * 0.01).to_i
@@ -112,13 +114,13 @@ SAMPLE_TOTAL_VOTES.times do |id|
 
   if id % 100_000 == 0
     # Save to disk every 100_000 voters
-    File.open("data/voters.json","w") do |f|
+    File.open("data/#{VOTERS_FILE_NAME}", "w") do |f|
       f.write(voters.to_json)
     end
     puts "#{((id.to_f / SAMPLE_TOTAL_VOTES) * 100).round(2)}% of #{SAMPLE_TOTAL_VOTES} generated"
   end
 end
 
-File.open("data/voters.json","w") do |f|
+File.open("data/#{VOTERS_FILE_NAME}", "w") do |f|
   f.write(voters.to_json)
 end
