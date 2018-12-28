@@ -1,26 +1,26 @@
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
-## Vote Create - Listens to incoming vote and puts to SQS queue for processing
+## Vote Processor - Listens to incoming vote and puts to SQS queue for processing
 
-resource "aws_cloudwatch_log_group" "create_lambda_log_group" {
-  name = "/aws/lambda/${aws_lambda_function.vote_create_lambda.function_name}"
+resource "aws_cloudwatch_log_group" "vote_enqueuer_lambda_log_group" {
+  name = "/aws/lambda/${aws_lambda_function.vote_enqueuer_lambda.function_name}"
 }
 
-data "archive_file" "vote_create_files" {
+data "archive_file" "vote_enqueuer_files" {
   type        = "zip"
-  source_dir  = "${path.module}/vote_create/index"
-  output_path = "${path.module}/vote_create/files/${data.aws_region.current.name}/index.zip"
+  source_dir  = "${path.module}/vote_enqueuer/index"
+  output_path = "${path.module}/vote_enqueuer/files/${data.aws_region.current.name}/index.zip"
 }
 
-resource "aws_lambda_function" "vote_create_lambda" {
-  filename         = "${path.module}/vote_create/files/${data.aws_region.current.name}/index.zip"
-  function_name    = "vote_create_function"
-  role             = "${aws_iam_role.vote_create_lambda.arn}"
+resource "aws_lambda_function" "vote_enqueuer_lambda" {
+  filename         = "${path.module}/vote_enqueuer/files/${data.aws_region.current.name}/index.zip"
+  function_name    = "vote_enqueuer_function"
+  role             = "${aws_iam_role.vote_enqueuer_lambda.arn}"
   runtime          = "ruby2.5"
   handler          = "function.handler"
   timeout          = "30"
-  source_code_hash = "${data.archive_file.vote_create_files.output_base64sha256}"
+  source_code_hash = "${data.archive_file.vote_enqueuer_files.output_base64sha256}"
 
   environment {
     variables = {
@@ -30,7 +30,7 @@ resource "aws_lambda_function" "vote_create_lambda" {
   }
 }
 
-data "aws_iam_policy_document" "vote_create_lambda_policy" {
+data "aws_iam_policy_document" "vote_enqueuer_lambda_policy" {
   statement {
     actions = [
       "logs:PutLogEvents",
@@ -38,7 +38,7 @@ data "aws_iam_policy_document" "vote_create_lambda_policy" {
     ]
 
     resources = [
-      "${aws_cloudwatch_log_group.create_lambda_log_group.arn}",
+      "${aws_cloudwatch_log_group.vote_enqueuer_lambda_log_group.arn}",
     ]
   }
 
@@ -64,7 +64,7 @@ data "aws_iam_policy_document" "vote_create_lambda_policy" {
   }
 }
 
-resource "aws_iam_role" "vote_create_lambda" {
+resource "aws_iam_role" "vote_enqueuer_lambda" {
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -82,33 +82,33 @@ resource "aws_iam_role" "vote_create_lambda" {
 EOF
 }
 
-resource "aws_iam_role_policy" "vote_create_role_policy_lambda" {
-  name   = "${aws_iam_role.vote_create_lambda.name}-policy"
-  role   = "${aws_iam_role.vote_create_lambda.id}"
-  policy = "${data.aws_iam_policy_document.vote_create_lambda_policy.json}"
+resource "aws_iam_role_policy" "vote_enqueuer_role_policy_lambda" {
+  name   = "${aws_iam_role.vote_enqueuer_lambda.name}-policy"
+  role   = "${aws_iam_role.vote_enqueuer_lambda.id}"
+  policy = "${data.aws_iam_policy_document.vote_enqueuer_lambda_policy.json}"
 }
 
 ## Vote Save - Listens to SQS and saves vote
 
-resource "aws_cloudwatch_log_group" "save_lambda_log_group" {
-  name = "/aws/lambda/${aws_lambda_function.vote_save_lambda.function_name}"
+resource "aws_cloudwatch_log_group" "vote_processor_lambda_log_group" {
+  name = "/aws/lambda/${aws_lambda_function.vote_processor_lambda.function_name}"
 
   # kms_key_id = "alias/aws/cloudwatch"
 }
 
-data "archive_file" "vote_save_files" {
+data "archive_file" "vote_processor_files" {
   type        = "zip"
-  source_dir  = "${path.module}/vote_save/index"
-  output_path = "${path.module}/vote_save/files/${data.aws_region.current.name}/index.zip"
+  source_dir  = "${path.module}/vote_processor/index"
+  output_path = "${path.module}/vote_processor/files/${data.aws_region.current.name}/index.zip"
 }
 
-resource "aws_lambda_function" "vote_save_lambda" {
-  filename         = "${path.module}/vote_save/files/${data.aws_region.current.name}/index.zip"
-  function_name    = "vote_save_function"
-  role             = "${aws_iam_role.vote_save_lambda.arn}"
+resource "aws_lambda_function" "vote_processor_lambda" {
+  filename         = "${path.module}/vote_processor/files/${data.aws_region.current.name}/index.zip"
+  function_name    = "vote_processor_function"
+  role             = "${aws_iam_role.vote_processor_lambda.arn}"
   runtime          = "ruby2.5"
   handler          = "function.handler"
-  source_code_hash = "${data.archive_file.vote_save_files.output_base64sha256}"
+  source_code_hash = "${data.archive_file.vote_processor_files.output_base64sha256}"
 
   environment {
     variables = {
@@ -118,7 +118,7 @@ resource "aws_lambda_function" "vote_save_lambda" {
   }
 }
 
-data "aws_iam_policy_document" "vote_save_lambda_policy" {
+data "aws_iam_policy_document" "vote_processor_lambda_policy" {
   statement {
     actions = [
       "logs:PutLogEvents",
@@ -126,7 +126,7 @@ data "aws_iam_policy_document" "vote_save_lambda_policy" {
     ]
 
     resources = [
-      "${aws_cloudwatch_log_group.save_lambda_log_group.arn}",
+      "${aws_cloudwatch_log_group.vote_processor_lambda_log_group.arn}",
     ]
   }
 
@@ -157,7 +157,7 @@ data "aws_iam_policy_document" "vote_save_lambda_policy" {
   }
 }
 
-resource "aws_iam_role" "vote_save_lambda" {
+resource "aws_iam_role" "vote_processor_lambda" {
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -175,15 +175,15 @@ resource "aws_iam_role" "vote_save_lambda" {
 EOF
 }
 
-resource "aws_iam_role_policy" "vote_save_role_policy_lambda" {
-  name   = "${aws_iam_role.vote_save_lambda.name}-policy"
-  role   = "${aws_iam_role.vote_save_lambda.id}"
-  policy = "${data.aws_iam_policy_document.vote_save_lambda_policy.json}"
+resource "aws_iam_role_policy" "vote_processor_role_policy_lambda" {
+  name   = "${aws_iam_role.vote_processor_lambda.name}-policy"
+  role   = "${aws_iam_role.vote_processor_lambda.id}"
+  policy = "${data.aws_iam_policy_document.vote_processor_lambda_policy.json}"
 }
 
 resource "aws_lambda_event_source_mapping" "lambda_sqs_trigger" {
   event_source_arn = "${var.votes_sqs_arn}"
-  function_name    = "${aws_lambda_function.vote_save_lambda.arn}"
+  function_name    = "${aws_lambda_function.vote_processor_lambda.arn}"
 }
 
 ## Results - shows election results

@@ -50,10 +50,10 @@ module "voters_table" {
 module "api" {
   source = "../api"
 
-  zone_id                           = "${var.zone_id}"
-  cert_arn                          = "${aws_acm_certificate.cert.arn}"
-  vote_create_lambda_function_name  = "${module.lambda_functions.vote_create_lambda_function_name}"
-  results_lambda_function_name      = "${module.lambda_functions.results_lambda_function_name}"
-  health_check_lambda_function_name = "${module.lambda_functions.health_check_lambda_function_name}"
-  api_subdomain                     = "${var.api_subdomain}"
+  zone_id                            = "${var.zone_id}"
+  cert_arn                           = "${aws_acm_certificate.cert.arn}"
+  vote_enqueuer_lambda_function_name = "${module.lambda_functions.vote_enqueuer_lambda_function_name}"
+  results_lambda_function_name       = "${module.lambda_functions.results_lambda_function_name}"
+  health_check_lambda_function_name  = "${module.lambda_functions.health_check_lambda_function_name}"
+  api_subdomain                      = "${var.api_subdomain}"
 }
