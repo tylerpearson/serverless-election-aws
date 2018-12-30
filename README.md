@@ -35,6 +35,7 @@ A more in-depth writeup on how it all works is coming soon.
 ├── modules
 │   ├── api
 │   ├── database
+│   ├── encrpytion
 │   ├── functions
 │   ├── queue
 │   └── region
