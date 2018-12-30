@@ -22,7 +22,6 @@ resource "aws_lambda_function" "vote_enqueuer_lambda" {
   handler          = "function.handler"
   timeout          = "30"
   source_code_hash = "${data.archive_file.vote_enqueuer_files.output_base64sha256}"
-  kms_key_arn      = "${var.kms_arn}"
 
   environment {
     variables = {
@@ -110,7 +109,6 @@ resource "aws_lambda_function" "vote_processor_lambda" {
   runtime          = "ruby2.5"
   handler          = "function.handler"
   source_code_hash = "${data.archive_file.vote_processor_files.output_base64sha256}"
-  kms_key_arn      = "${var.kms_arn}"
 
   environment {
     variables = {

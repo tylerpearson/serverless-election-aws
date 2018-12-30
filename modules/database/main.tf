@@ -6,6 +6,10 @@
 # Like all CMKs, the service default key never leaves AWS KMS unencrypted.
 # The encryption at rest feature does not support the use of customer managed CMKs.
 
+locals {
+  gsi_index_name = "state-candidate-index"
+}
+
 resource "aws_dynamodb_table" "voters_table" {
   hash_key         = "voter_id"
   name             = "voters"
@@ -36,7 +40,7 @@ resource "aws_dynamodb_table" "voters_table" {
   }
 
   global_secondary_index {
-    name            = "state-candidate-index"
+    name            = "${local.gsi_index_name}"
     hash_key        = "state"
     range_key       = "candidate"
     projection_type = "KEYS_ONLY"
@@ -104,5 +108,5 @@ module "results_table_auto_scaling" {
 module "voters_gsi_table_auto_scaling" {
   source       = "./auto_scaling"
   scaling_type = "index"
-  table_name   = "${aws_dynamodb_table.voters_table.name}/index/state-candidate-index"
+  table_name   = "${aws_dynamodb_table.voters_table.name}/index/${local.gsi_index_name}"
 }
