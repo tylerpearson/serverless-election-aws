@@ -1,10 +1,11 @@
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
-## Vote Processor - Listens to incoming vote and puts to SQS queue for processing
+## Vote Enqueuer - Listens to incoming vote and puts to SQS queue for processing
 
 resource "aws_cloudwatch_log_group" "vote_enqueuer_lambda_log_group" {
-  name = "/aws/lambda/${aws_lambda_function.vote_enqueuer_lambda.function_name}"
+  name       = "/aws/lambda/${aws_lambda_function.vote_enqueuer_lambda.function_name}"
+  kms_key_id = "${var.kms_arn}"
 }
 
 data "archive_file" "vote_enqueuer_files" {
@@ -21,6 +22,7 @@ resource "aws_lambda_function" "vote_enqueuer_lambda" {
   handler          = "function.handler"
   timeout          = "30"
   source_code_hash = "${data.archive_file.vote_enqueuer_files.output_base64sha256}"
+  kms_key_arn      = "${var.kms_arn}"
 
   environment {
     variables = {
@@ -88,12 +90,11 @@ resource "aws_iam_role_policy" "vote_enqueuer_role_policy_lambda" {
   policy = "${data.aws_iam_policy_document.vote_enqueuer_lambda_policy.json}"
 }
 
-## Vote Save - Listens to SQS and saves vote
+## Vote Processor - Listens to SQS and saves vote
 
 resource "aws_cloudwatch_log_group" "vote_processor_lambda_log_group" {
-  name = "/aws/lambda/${aws_lambda_function.vote_processor_lambda.function_name}"
-
-  # kms_key_id = "alias/aws/cloudwatch"
+  name       = "/aws/lambda/${aws_lambda_function.vote_processor_lambda.function_name}"
+  kms_key_id = "${var.kms_arn}"
 }
 
 data "archive_file" "vote_processor_files" {
@@ -109,6 +110,7 @@ resource "aws_lambda_function" "vote_processor_lambda" {
   runtime          = "ruby2.5"
   handler          = "function.handler"
   source_code_hash = "${data.archive_file.vote_processor_files.output_base64sha256}"
+  kms_key_arn      = "${var.kms_arn}"
 
   environment {
     variables = {
@@ -189,9 +191,8 @@ resource "aws_lambda_event_source_mapping" "lambda_sqs_trigger" {
 ## Results - shows election results
 
 resource "aws_cloudwatch_log_group" "results_lambda_log_group" {
-  name = "/aws/lambda/${aws_lambda_function.results_lambda.function_name}"
-
-  # kms_key_id = "alias/aws/cloudwatch"
+  name       = "/aws/lambda/${aws_lambda_function.results_lambda.function_name}"
+  kms_key_id = "${var.kms_arn}"
 }
 
 data "archive_file" "results_files" {
@@ -268,9 +269,8 @@ resource "aws_iam_role_policy" "vote_results_role_policy_lambda" {
 # Health Check
 
 resource "aws_cloudwatch_log_group" "health_check_lambda_log_group" {
-  name = "/aws/lambda/${aws_lambda_function.health_check_lambda.function_name}"
-
-  # kms_key_id = "alias/aws/cloudwatch"
+  name       = "/aws/lambda/${aws_lambda_function.health_check_lambda.function_name}"
+  kms_key_id = "${var.kms_arn}"
 }
 
 data "archive_file" "health_check_files" {

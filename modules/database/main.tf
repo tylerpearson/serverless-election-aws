@@ -1,3 +1,11 @@
+# More info on DynamoDB encryption here:
+# https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html
+# -> When you create an encrypted table, DynamoDB creates a unique AWS managed
+# customer master key (CMK) in each region of your AWS account, if one does not
+# already exist. This CMK, aws/dynamodb, is known as the service default key.
+# Like all CMKs, the service default key never leaves AWS KMS unencrypted.
+# The encryption at rest feature does not support the use of customer managed CMKs.
+
 resource "aws_dynamodb_table" "voters_table" {
   hash_key         = "voter_id"
   name             = "voters"
@@ -81,7 +89,7 @@ resource "aws_dynamodb_table" "results_table" {
   }
 }
 
-# Read and write =autoscaling of tables
+# Read and write autoscaling of tables
 
 module "voters_table_auto_scaling" {
   source     = "./auto_scaling"
@@ -91,4 +99,10 @@ module "voters_table_auto_scaling" {
 module "results_table_auto_scaling" {
   source     = "./auto_scaling"
   table_name = "${aws_dynamodb_table.results_table.name}"
+}
+
+module "voters_gsi_table_auto_scaling" {
+  source       = "./auto_scaling"
+  scaling_type = "index"
+  table_name   = "${aws_dynamodb_table.voters_table.name}/index/state-candidate-index"
 }

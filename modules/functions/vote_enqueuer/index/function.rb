@@ -30,7 +30,7 @@ def handler(event:, context:)
     status_code = 409
     body = {
       "success": false,
-      "message": "#{event_body['voter_id']} submitted at vote at #{resp.item['voted_at']}"
+      "message": "#{event_body['voter_id']} already submitted a vote at #{resp.item['voted_at']}"
     }
   else
     status_code = 404
