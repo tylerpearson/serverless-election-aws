@@ -45,6 +45,7 @@ A more in-depth writeup on how it all works is coming soon.
 - `modules` - Terraform modules for each component
   - `api` - API Gateway, region-specific DNS setup, and IAM roles and permissions required for interacting with Lambda
   - `database` - Setup for DynamoDB tables. Autoscaling policies
+  - `encryption` - KMS resources used by other resources for encryption at rest of data
   - `functions` - Lambda functions for creating and saving votes.
   - `queue` - SQS queues as the stage between the API request and saving the vote to DynamoDB
   - `region` a module containing setup for the above modules. Reusable across regions
