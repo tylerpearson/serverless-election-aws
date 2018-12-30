@@ -1,4 +1,5 @@
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 
 data "aws_route53_zone" "voting_zone" {
   zone_id = "${var.zone_id}"
@@ -37,14 +38,20 @@ module "lambda_functions" {
   voters_table_name  = "${module.voters_table.voters_table_name}"
   results_table_arn  = "${module.voters_table.results_table_arn}"
   results_table_name = "${module.voters_table.results_table_name}"
+  kms_arn            = "${module.encryption.kms_key_arn}"
+}
+
+module "encryption" {
+  source = "../encryption"
 }
 
 module "sqs" {
-  source = "../queue"
+  source  = "../queue"
+  kms_arn = "${module.encryption.kms_key_arn}"
 }
 
 module "voters_table" {
-  source = "../database"
+  source = "../database" # TODO: Change this name to "database"
 }
 
 module "api" {

@@ -23,3 +23,7 @@ variable "results_table_name" {
   description = "Name of the results table"
   default     = "results"
 }
+
+variable "kms_arn" {
+  description = "ARN of the KMS key"
+}

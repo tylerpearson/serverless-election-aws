@@ -2,11 +2,15 @@ variable "table_name" {
   description = "The DynamoDB table name"
 }
 
+variable "scaling_type" {
+  default = "table"
+}
+
 resource "aws_appautoscaling_target" "dynamodb_table_read_target" {
   max_capacity       = 500
   min_capacity       = 5
   resource_id        = "table/${var.table_name}"
-  scalable_dimension = "dynamodb:table:ReadCapacityUnits"
+  scalable_dimension = "dynamodb:${var.scaling_type}:ReadCapacityUnits"
   service_namespace  = "dynamodb"
 }
 
@@ -30,7 +34,7 @@ resource "aws_appautoscaling_target" "dynamodb_table_write_target" {
   max_capacity       = 1000
   min_capacity       = 5
   resource_id        = "table/${var.table_name}"
-  scalable_dimension = "dynamodb:table:WriteCapacityUnits"
+  scalable_dimension = "dynamodb:${var.scaling_type}:WriteCapacityUnits"
   service_namespace  = "dynamodb"
 }
 
