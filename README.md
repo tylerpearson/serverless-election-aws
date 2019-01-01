@@ -5,13 +5,15 @@
 - [Architecture](#architecture)
 - [Directory structure](#directory-structure)
 - [Implementation details](#implementation-details)
-  - [Amazon DynamoDB](#amazon-dynamodb)
-  - [Amazon API Gateway](#amazon-api-gateway)
-  - [AWS Lambda](#aws-lambda)
-  - [AWS IAM](#aws-iam)
-  - [Amazon CloudFront and Amazon S3](#amazon-cloudfront-and-amazon-s3)
-  - [Amazon VPC](#amazon-vpc)
-  - [Amazon CloudWatch](#amazon-cloudwatch)
+  - [DynamoDB](#dynamodb)
+  - [API Gateway](#api-gateway)
+  - [Lambda](#lambda)
+  - [IAM](#iam)
+  - [CloudFront and S3](#cloudfront-and-s3)
+  - [CloudWatch](#cloudwatch)
+  - [KMS](#kms)
+- [Election simulation](#election-simulation)
+- [Website](#website)
 - [Disclaimers](#disclaimers)
 
 
@@ -50,6 +52,8 @@ To use these Terraform templates:
 To destroy everything created above, run `terraform destroy`. Note that there are costs associated with these resources if they are left on.
 
 ## Architecture
+
+Two regions are used (us-east-1 and us-west-1).
 
 ![Diagram](diagram.png?raw=true "Architecture")
 

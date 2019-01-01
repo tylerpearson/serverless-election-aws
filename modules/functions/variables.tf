@@ -27,3 +27,7 @@ variable "results_table_name" {
 variable "kms_arn" {
   description = "ARN of the KMS key"
 }
+
+variable "website_domain" {
+  description = "Domain of the voting website"
+}

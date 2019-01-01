@@ -44,7 +44,7 @@ def handler(event:, context:)
     "isBase64Encoded": false,
     "statusCode": status_code,
     "headers": {
-      "Access-Control-Allow-Origin": "*"
+      "Access-Control-Allow-Origin": "https://#{ENV['WEBSITE_DOMAIN']}"
     },
     "body": body.to_json
   }
