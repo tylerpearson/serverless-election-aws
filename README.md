@@ -8,10 +8,11 @@
   - [DynamoDB](#dynamodb)
   - [API Gateway](#api-gateway)
   - [Lambda](#lambda)
-  - [IAM](#iam)
+  - [SQS](#sqs)
   - [CloudFront and S3](#cloudfront-and-s3)
   - [CloudWatch](#cloudwatch)
   - [KMS](#kms)
+  - [IAM](#iam)
   - [Certificate Manager](#certificate-manager)
 - [Election simulation](#election-simulation)
 - [Website](#website)
@@ -100,7 +101,7 @@ To be added.
 
 To be added.
 
-### IAM
+### SQS
 
 To be added.
 
@@ -113,6 +114,10 @@ To be added.
 To be added.
 
 ### KMS
+
+To be added.
+
+### IAM
 
 To be added.
 
