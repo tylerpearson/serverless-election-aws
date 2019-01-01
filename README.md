@@ -1,10 +1,10 @@
-# The U.S. National Presidential Election on AWS with Serverless
+# Demo of the U.S. National Presidential Election on AWS with Serverless
 
 - [Overview](#overview)
 - [Instructions](#instructions)
 - [Architecture](#architecture)
 - [Directory structure](#directory-structure)
-- [Implementation details](#implementation-details)
+- [Implementation](#implementation)
   - [DynamoDB](#dynamodb)
   - [API Gateway](#api-gateway)
   - [Lambda](#lambda)
@@ -12,10 +12,10 @@
   - [CloudFront and S3](#cloudfront-and-s3)
   - [CloudWatch](#cloudwatch)
   - [KMS](#kms)
+  - [Certificate Manager](#certificate-manager)
 - [Election simulation](#election-simulation)
 - [Website](#website)
 - [Disclaimers](#disclaimers)
-
 
 ## Overview
 
@@ -81,6 +81,44 @@ Two regions are used (us-east-1 and us-west-1).
   - `region` a module containing setup for the above modules. Reusable across regions
 - `scripts` - Scripts for loading mock voters into the tables and doing load testing of voting
 - `website` - Static website in S3 with an example UI of how voters interact with the API.
+
+## Implementation
+
+### DynamoDB
+
+To be added.
+
+### Route 53
+
+To be added.
+
+### API Gateway
+
+To be added.
+
+### Lambda
+
+To be added.
+
+### IAM
+
+To be added.
+
+### CloudFront and S3
+
+To be added.
+
+### CloudWatch
+
+To be added.
+
+### KMS
+
+To be added.
+
+### Certificate Manager
+
+To be added.
 
 ## Election simulation
 
