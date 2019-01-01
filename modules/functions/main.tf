@@ -27,6 +27,7 @@ resource "aws_lambda_function" "vote_enqueuer_lambda" {
     variables = {
       VOTES_QUEUE_URL          = "${var.votes_sqs_id}"
       VOTERS_DYNAMO_TABLE_NAME = "${var.voters_table_name}"
+      WEBSITE_DOMAIN           = "${var.website_domain}"
     }
   }
 }

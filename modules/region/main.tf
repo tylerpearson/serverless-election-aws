@@ -7,7 +7,7 @@ data "aws_route53_zone" "voting_zone" {
 
 resource "aws_acm_certificate" "cert" {
   domain_name               = "${replace(data.aws_route53_zone.voting_zone.name, "/[.]$/", "")}"
-  subject_alternative_names = ["*.${replace(data.aws_route53_zone.voting_zone.name, "/[.]$/", "")}"]
+  subject_alternative_names = ["${var.api_subdomain}.${replace(data.aws_route53_zone.voting_zone.name, "/[.]$/", "")}"]
   validation_method         = "DNS"
 
   lifecycle {
@@ -39,6 +39,7 @@ module "lambda_functions" {
   results_table_arn  = "${module.voters_table.results_table_arn}"
   results_table_name = "${module.voters_table.results_table_name}"
   kms_arn            = "${module.encryption.kms_key_arn}"
+  website_domain     = "${replace(data.aws_route53_zone.voting_zone.name, "/[.]$/", "")}"
 }
 
 module "encryption" {

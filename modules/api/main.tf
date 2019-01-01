@@ -1,3 +1,6 @@
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
 data "aws_lambda_function" "vote_enqueuer_lambda" {
   function_name = "${var.vote_enqueuer_lambda_function_name}"
 }
@@ -14,10 +17,55 @@ locals {
   vote_enqueuer_lambda_arn = "${replace(data.aws_lambda_function.vote_enqueuer_lambda.arn, ":$LATEST", "")}"
   results_lambda_arn       = "${replace(data.aws_lambda_function.results_lambda.arn, ":$LATEST", "")}"
   health_check_lambda_arn  = "${replace(data.aws_lambda_function.health_check_lambda.arn, ":$LATEST", "")}"
+  stage_name               = "production"
 }
 
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
+resource "aws_api_gateway_account" "account" {
+  cloudwatch_role_arn = "${aws_iam_role.cloudwatch.arn}"
+}
+
+resource "aws_iam_role" "cloudwatch" {
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "apigateway.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "cloudwatch" {
+  role = "${aws_iam_role.cloudwatch.id}"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
 
 # https://aws.amazon.com/blogs/compute/building-a-multi-region-serverless-application-with-amazon-api-gateway-and-aws-lambda/
 resource "aws_api_gateway_rest_api" "api" {
@@ -43,6 +91,8 @@ module "cors" {
 
   api_id          = "${aws_api_gateway_rest_api.api.id}"
   api_resource_id = "${aws_api_gateway_resource.resource.id}"
+  allow_origin    = "https://${replace(data.aws_route53_zone.voting_zone.name, "/[.]$/", "")}"
+  allow_methods   = ["OPTIONS", "HEAD", "GET", "POST"]
 }
 
 resource "aws_api_gateway_method" "method" {
@@ -52,13 +102,26 @@ resource "aws_api_gateway_method" "method" {
   authorization = "NONE"
 }
 
+resource "aws_api_gateway_method_settings" "s" {
+  rest_api_id = "${aws_api_gateway_rest_api.api.id}"
+  stage_name  = "${local.stage_name}"
+  method_path = "*/*"
+
+  settings {
+    metrics_enabled = true
+    logging_level   = "INFO"
+  }
+
+  depends_on = ["aws_api_gateway_deployment.api"]
+}
+
 resource "aws_api_gateway_deployment" "api" {
   depends_on = [
     "aws_api_gateway_integration.integration",
   ]
 
   rest_api_id = "${aws_api_gateway_rest_api.api.id}"
-  stage_name  = "production"
+  stage_name  = "${local.stage_name}"
 }
 
 resource "aws_api_gateway_integration" "integration" {
