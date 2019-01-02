@@ -2,7 +2,7 @@ require 'json'
 require 'time'
 require 'aws-sdk-dynamodb'
 
-def state_array
+def state_list
   %w(AK AL AR AZ CA CO CT DC DE FL GA HI IA ID IL IN KS KY LA MA MD ME MI MN MO MS MT NC ND NE NH NJ NM NV NY OH OK OR PA RI SC SD TN TX UT VA VT WA WI WV WY)
 end
 
@@ -18,13 +18,13 @@ def handler(event:, context:)
 
   results = []
 
-  state_array.each do |state|
+  state_list.each do |state|
     state_results = scan_output.items.select { |item| item['state'] == state }
 
-    state_results =  state_results.map do |item|
-                        { candidate: item['candidate'],
-                          count: item['count'].to_i }
-                      end
+    state_results = state_results.map do |item|
+                      { candidate: item['candidate'],
+                        count: item['count'].to_i }
+                    end
 
     total_count = state_results.inject(0) { |s, h| s + h[:count] }
 

@@ -1,3 +1,3 @@
 api_subdomain = "api"
-domain_name = "tylerpearson.cloud"
-aws_profile_name = "tyler-personal-election"
+domain_name = "tylerp.xyz"
+aws_profile_name = "election-simulation"

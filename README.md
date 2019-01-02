@@ -87,7 +87,49 @@ Two regions are used (us-east-1 and us-west-1).
 
 ### DynamoDB
 
-To be added.
+- DynamoDB is used to store information on voters and votes cast during the election.
+- There are two tables used, `Voters` and `Results`. There is more detailed info on how each table is used below.
+- The tables exist in the two active AWS regions, `us-east-1` and `us-west-2`. Each table is setup as a global table to enable multi-region multi-master writes and reads.
+- Auto-scaling is enabled on the tables and indexes to keep provisioned writes and reads at optimal levels.
+- DynamoDB's support for [encryption at rest](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/EncryptionAtRest.html) is used on each table for an additional level of protection when the data is stored.
+
+
+### Voters table
+
+The Voters table contain an item for each registered voter. Attributes included are the standard address, name, and state. Additionally, every voter has a globally unique `id` that they use to cast their vote. As votes are cast, the `candidate` and `voted_at` attributes are added to keep track of the candidate the voter selected and at what time the vote was cast.
+
+```
+Voters {
+  id: string (uuid, primary partition key)
+  address: string
+  first_name: string
+  last_name: string
+  state: string
+  candidate: string
+  voted_at: string
+}
+```
+
+There is one global secondary index on the Voters table to make it easier to search for results by state and candidate. This index contains is sparse until votes are cast because it relies on the `candidate` attribute. Only three attributes are projected: `state`, `candidate`, and `id` because this index would primarily be used for `COUNT` type queries (e.g. how many votes in Michigan were cast for Hillary Clinton). Limiting the attributes that are projected helps with query time and reduces the required provisioned write and read throughput.
+
+```
+StateCandidateIndex {
+  state: string (partition key)
+  candidate: string (sort key)
+  id: string
+}
+
+### Results table
+
+The `Results` table is a summary table that keeps track of the number of votes cast for each candidate in each state. As votes are cast, the count is incremenented on the item for the candidate in the voter's state. This makes it easier to see the number of votes cast on Election Day and during early voting. The `Voters` table should be relied on as the source of truth for votes cast and the `Results` table should be used as an estimate due to the [risks involved with atomic counters](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters).
+
+```
+Results {
+  state: string (partition key)
+  candidate: string (sort key)
+  count: integer
+}
+```
 
 ### Route 53
 

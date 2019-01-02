@@ -19,7 +19,7 @@ def handler(event:, context:)
         ":va": message['voted_at'],
       },
       key: {
-        "voter_id": message['voter_id'],
+        "id": message['id'],
       },
       return_values: "ALL_NEW",
       table_name: ENV['VOTERS_DYNAMO_TABLE_NAME'],

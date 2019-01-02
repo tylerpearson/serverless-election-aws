@@ -2,10 +2,10 @@
 # To use these scripts, be sure to change to match your state bucket and profile
 terraform {
   backend "s3" {
-    bucket  = "terraform-election-state"
+    bucket  = "election-terraform-state"
     key     = "terraform.tfstate"
-    region  = "us-west-1"
+    region  = "us-east-1"
     encrypt = "true"
-    profile = "tyler-personal-election"
+    profile = "election-simulation"
   }
 }

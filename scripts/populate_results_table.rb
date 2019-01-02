@@ -4,7 +4,7 @@ require 'aws-sdk-dynamodb'
 require 'securerandom'
 
 dynamodb = Aws::DynamoDB::Client.new(region: 'us-west-1',
-                                     profile: 'tyler-personal-election')
+                                     profile: 'election-simulation')
 
 
 candidates = ["Donald Trump", "Hillary Clinton", "Gary Johnson", "Jill Stein", "Evan McMullin"]
@@ -26,7 +26,7 @@ state_array.each_with_index do |state, index|
     }
 
     params = {
-      table_name: 'results',
+      table_name: 'Results',
       item: state_item
     }
 
