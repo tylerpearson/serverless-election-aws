@@ -118,6 +118,7 @@ StateCandidateIndex {
   candidate: string (sort key)
   id: string
 }
+```
 
 ### Results table
 
