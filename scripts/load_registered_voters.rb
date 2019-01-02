@@ -4,19 +4,18 @@ require 'aws-sdk-dynamodb'
 require 'securerandom'
 
 dynamodb = Aws::DynamoDB::Client.new(region: 'us-west-1',
-                                     profile: 'tyler-personal-election')
+                                     profile: 'election-simulation')
 
 skipped_count = 0
 loaded_count = 0
 
-voters = JSON.load File.new("data/voters.json")
+voters = JSON.load(File.new("data/voters-2.json"))
 
 voters.each_with_index do |voter_info, index|
-
   puts index if index % 1000 == 0
 
   params = {
-    table_name: 'voters',
+    table_name: 'Voters',
     item: voter_info
   }
 

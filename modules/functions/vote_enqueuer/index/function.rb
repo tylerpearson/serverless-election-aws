@@ -9,7 +9,7 @@ def handler(event:, context:)
   dynamo_client = Aws::DynamoDB::Client.new
   resp = dynamo_client.get_item({
     key: {
-      'voter_id': event_body['voter_id']
+      'id': event_body['id']
     },
     table_name: ENV['VOTERS_DYNAMO_TABLE_NAME'],
     return_consumed_capacity: 'NONE'
@@ -19,24 +19,24 @@ def handler(event:, context:)
     sqs_client = Aws::SQS::Client.new
     resp = sqs_client.send_message({
       queue_url: ENV['VOTES_QUEUE_URL'],
-      message_body: event_body.merge!({voted_at: Time.now.utc.iso8601}).to_json
+      message_body: event_body.merge!({ voted_at: Time.now.utc.iso8601 }).to_json
     })
     status_code = 201
     body = {
       "success": true,
-      "message": "Vote #{event_body['voter_id']} registered"
+      "message": "Vote #{event_body['id']} registered"
     }
   elsif resp.item && !resp.item['voted_at'].nil?
     status_code = 409
     body = {
       "success": false,
-      "message": "#{event_body['voter_id']} already submitted a vote at #{resp.item['voted_at']}"
+      "message": "#{event_body['id']} already submitted a vote at #{resp.item['voted_at']}"
     }
   else
     status_code = 404
     body = {
       "success": false,
-      "message": "This voter id does not exist: #{event_body['voter_id']}"
+      "message": "This voter id does not exist: #{event_body['id']}"
     }
   end
 

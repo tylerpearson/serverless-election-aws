@@ -34,10 +34,10 @@ module "lambda_functions" {
 
   votes_sqs_arn      = "${module.sqs.votes_sqs_arn}"
   votes_sqs_id       = "${module.sqs.votes_sqs_id}"
-  voters_table_arn   = "${module.voters_table.voters_table_arn}"
-  voters_table_name  = "${module.voters_table.voters_table_name}"
-  results_table_arn  = "${module.voters_table.results_table_arn}"
-  results_table_name = "${module.voters_table.results_table_name}"
+  voters_table_arn   = "${module.database.voters_table_arn}"
+  voters_table_name  = "${module.database.voters_table_name}"
+  results_table_arn  = "${module.database.results_table_arn}"
+  results_table_name = "${module.database.results_table_name}"
   kms_arn            = "${module.encryption.kms_key_arn}"
   website_domain     = "${replace(data.aws_route53_zone.voting_zone.name, "/[.]$/", "")}"
 }
@@ -51,7 +51,7 @@ module "sqs" {
   kms_arn = "${module.encryption.kms_key_arn}"
 }
 
-module "voters_table" {
+module "database" {
   source = "../database" # TODO: Change this name to "database"
 }
 

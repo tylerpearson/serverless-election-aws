@@ -45,7 +45,7 @@ hydra = Typhoeus::Hydra.new
 
 
 voters.each_with_index do |voter_info, index|
-  vote = { "voter_id": voter_info['voter_id'],
+  vote = { "id": voter_info['voter_id'],
            "candidate": select_candidate(results[voter_info['state']]) }
 
   next if index < 1_000_000

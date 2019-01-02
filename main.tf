@@ -57,7 +57,7 @@ resource "aws_dynamodb_global_table" "voters_global_table" {
   depends_on = ["module.us_east_1", "module.us_west_1"]
   provider   = "aws.us-east-1"
 
-  name = "voters"
+  name = "${module.us_east_1.voters_table_name}"
 
   replica {
     region_name = "us-east-1"
@@ -72,7 +72,7 @@ resource "aws_dynamodb_global_table" "results_global_table" {
   depends_on = ["module.us_east_1", "module.us_west_1"]
   provider   = "aws.us-east-1"
 
-  name = "results"
+  name = "${module.us_east_1.results_table_name}"
 
   replica {
     region_name = "us-east-1"
@@ -135,19 +135,12 @@ resource "null_resource" "sync_website" {
 
   provisioner "local-exec" {
     command = <<SCRIPT
-aws s3 sync website/ s3://${aws_s3_bucket.static.id}/ --acl public-read --profile tyler-personal-election
-aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.static_website_cdn.id} --paths /\* --profile tyler-personal-election
+aws s3 sync website/ s3://${aws_s3_bucket.static.id}/ --acl public-read --profile ${var.aws_profile_name}
+aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.static_website_cdn.id} --paths /\* --profile ${var.aws_profile_name}
 SCRIPT
   }
 
   depends_on = ["aws_cloudfront_distribution.static_website_cdn", "aws_s3_bucket.static"]
-}
-
-data "aws_acm_certificate" "static_ssl_cert" {
-  provider    = "aws.us-east-1"
-  domain      = "${local.static_domain}"
-  types       = ["AMAZON_ISSUED"]
-  most_recent = true
 }
 
 resource "aws_cloudfront_distribution" "static_website_cdn" {
@@ -203,7 +196,7 @@ resource "aws_cloudfront_distribution" "static_website_cdn" {
     }
   }
   viewer_certificate {
-    acm_certificate_arn      = "${data.aws_acm_certificate.static_ssl_cert.arn}"
+    acm_certificate_arn      = "${module.us_east_1.cert_arn}"
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1"
   }
@@ -228,5 +221,5 @@ resource "aws_route53_record" "static_record" {
     evaluate_target_health = false
   }
 
-  depends_on = ["aws_cloudfront_distribution.static_website_cdn"]
+  # depends_on = ["aws_cloudfront_distribution.static_website_cdn"]
 }

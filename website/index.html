@@ -21,7 +21,7 @@
         event.preventDefault();
 
         let voteEvent = {
-          voter_id: document.getElementsByName('input-voter-id')[0].value,
+          id: document.getElementsByName('input-voter-id')[0].value,
           candidate: document.querySelector('input[name=input-candidate]:checked').value
         };
 
@@ -73,7 +73,7 @@
     <a href="/" class="brand-logo center"><i class="material-icons">cloud</i> Serverless Vote Online - DEMO</a>
     <ul id="nav-mobile" class="left hide-on-med-and-down">
       <li><a href="/">Vote</a></li>
-      <li><a href="https://api.election.tylerpearson.cloud/votes">Results</a></li>
+      <li><a href="https://api.election.tylerp.xyz/votes">Results</a></li>
     </ul>
   </div>
 </nav>
@@ -85,7 +85,7 @@
 
       <div class="section">
         <p>This is a demo of how a national election could be done with a multi-region active-active serverless setup on AWS.</p>
-        <p>The AWS services used include Lambda, API Gateway, Route 53, DynamoDB, S3, Cloudfront, Cloudwatch, KMS, and SQS. The Terraform templates and code used is at <a href="https://github.com/tylerpearson/election-on-aws">github.com/tylerpearson/election-on-aws</a>.</p>
+        <p>The AWS services used include Lambda, API Gateway, Route 53, DynamoDB, S3, Cloudfront, Cloudwatch, KMS, and SQS. The Terraform templates and code used is at <a href="https://github.com/tylerpearson/serverless-election-aws">github.com/tylerpearson/serverless-election-aws</a>.</p>
 
         <p>A JSON API endpoint with realtime results is located at <a href="https://api.election.tylerpearson.cloud/votes">api.election.tylerpearson.cloud/votes</a>.</p>
 

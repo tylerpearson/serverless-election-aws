@@ -7,21 +7,21 @@
 # The encryption at rest feature does not support the use of customer managed CMKs.
 
 locals {
-  gsi_index_name = "state-candidate-index"
+  gsi_index_name = "StateCandidateIndex"
 }
 
 resource "aws_dynamodb_table" "voters_table" {
-  hash_key         = "voter_id"
-  name             = "voters"
+  hash_key         = "id"
+  name             = "Voters"
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
 
   billing_mode   = "PROVISIONED"
   read_capacity  = 5
-  write_capacity = 5
+  write_capacity = 250
 
   attribute {
-    name = "voter_id"
+    name = "id"
     type = "S"
   }
 
@@ -54,14 +54,14 @@ resource "aws_dynamodb_table" "voters_table" {
 
   # disable when autoscaling
   lifecycle {
-    ignore_changes = ["read_capacity", "write_capacity"]
+    # ignore_changes = ["read_capacity", "write_capacity"]
   }
 }
 
 resource "aws_dynamodb_table" "results_table" {
   hash_key         = "state"
   range_key        = "candidate"
-  name             = "results"
+  name             = "Results"
   stream_enabled   = true
   stream_view_type = "NEW_AND_OLD_IMAGES"
 

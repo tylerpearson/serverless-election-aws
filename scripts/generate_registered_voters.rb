@@ -4,9 +4,9 @@ require 'securerandom'
 require 'faker'
 
 dynamodb = Aws::DynamoDB::Client.new(region: 'us-west-1',
-                                     profile: 'tyler-personal-election')
+                                     profile: 'election-simulation')
 
-VOTERS_FILE_NAME = 'voters.json'
+VOTERS_FILE_NAME = 'voters-2.json'
 
 # Total nubmer of votes cast in 2016 for the Presidential election
 TOTAL_VOTES_2016 = 136_669_237
@@ -107,7 +107,7 @@ SAMPLE_TOTAL_VOTES.times do |id|
     first_name: Faker::Name.first_name,
     last_name: Faker::Name.last_name,
     address: "#{Faker::Address.street_address}, #{Faker::Address.city}, #{state} #{Faker::Address.postcode}",
-    voter_id: SecureRandom.base58.scan(/.{5}/).join('-'),
+    id: SecureRandom.base58.scan(/.{5}/).join('-'),
     state: state
   }
   voters << voter
