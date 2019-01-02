@@ -138,19 +138,46 @@ To be added.
 
 ### API Gateway
 
-To be added.
+- Currently, the API Gateway does not use a WAF. Since voting infrastructure would absolutely be a target for attacks like DDOS, a WAF would make sense to be used for rate limiting and to protect against other common attacks.
 
 ### Lambda
 
-To be added.
+- There are four Lambda functions. Three are triggered by the API Gateway and one is triggered by messages in the SQS queue.
+- The default max number of concurrent invocations is 1,000. This would want to be bumped up before votes are cast to protect against rate limiting. It is critical for the `vote_enqueuer` function to operate properly every time to ensure that the vote is properly registered, so it would likely make sense to allocate reserved executions. Since messages are passed to the SQS queue, the downstream `vote_processor` functions can back up some without a negative impact (similar to how there is some time between polls closing on Election Day and the results being counted).
+- The functions take advantage of the [new support for the Ruby language](https://aws.amazon.com/blogs/compute/announcing-ruby-support-for-aws-lambda/).
+- Logs are output to CloudWatch and encrypted.
+
+#### Vote enqueuer function
+
+When a vote is cast from the voting UI website, JavaScript triggers a POST HTTP request to the API Gateway. The API Gateway then routes the request to the `vote_enqueuer` function. This function can respond in three different ways:
+
+1. If the id of the voter does not exist in the DynamoDB table (for example, a voter mistypes it), the Lambda responds with a message and response code to the front-end letting the voter know it does not exist.
+1. If the voter id does exist, but the voter has already cast a vote, a message and response code is returned to let the voter know they cannot vote multiple times.
+1. If the voter id does exist, and the voter cast not already cast a vote, it places a JSON message in the SQS queue with the voter id and candidate they selected.
+
+#### Vote processor function
+
+When a message containing the vote information is sent to the SQS queue, a downstream Lambda function called `vote_processor` consumes the message. This function will update the voter's item in the `Voters` DynamoDB table to include the time the vote was cast and who the candidate voted for. Additionally, this function increments the candidate's count in the `Results` table.
+
+If an exception occurs, for example if the DynamoDB tables are under-provisioned and a write or read fails, the message will be placed back on the SQS queue and [retried twice](https://docs.aws.amazon.com/lambda/latest/dg/retries-on-errors.html). If the function continues to fail, [the message is sent to a Dead Letter Queue](https://docs.aws.amazon.com/lambda/latest/dg/dlq.html) and can be reviewed to make sure that all votes cast are properly registered.
+
+#### Health check function
+
+The health check function is a simple Lambda function that responds to health checks triggered by Route 53. This checks that API Gateway and Lambda are working properly in the region. It could be modified to do additional checks against DynamoDB and SQS.
+
+#### Results function
+
+The `results` function is triggered by an API request and shares the current totals from the `Results` DynamoDB table. There is currently no caching, so every API request triggers a lookup on the table.
 
 ### SQS
 
 - SQS acts as a queue between a Lambda function triggered by the API Gateway and a Lambda function triggered by messages in the SQS queue. This takes advantages of [Lambda's recent integration support for SQS -> Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html).
-- The queue uses server-side encryption with the KMS CMK.
+- The queue uses server-side encryption with the KMS CMK. This protects against a burst of messages that could overwhelm writes to the DynamoDB table before autoscaling kicks in.
 - Vote updates on the DynamoDB table are idempotent, so the standard queue is used and FIFO isn't required.
 - The message retention period is bumped up to the max of 14 days, although due to the Lambda integration, the messages will be processed in near real-time.
 - Visibility timeout is set at the default 30 seconds, which is adequate for the time required for Lambda to update the record in DynamoDB.
+- If the queue is changed to FIFO, [SQS deduping](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/using-messagededuplicationid-property.html) should be done on the messages to prevent multiple votes being cast if there is a delay between a vote being cast and a vote being saved to the database. The voter id should be used as the deduplication id.
+- CloudWatch alerts should be setup to notify if the queues start to back up.
 
 ### CloudFront and S3
 
