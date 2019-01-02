@@ -166,7 +166,11 @@ To be added.
 
 ### Certificate Manager
 
-To be added.
+- AWS Certificate Manager is used to provision TLS/SSL certificates to protect data in transit on the static website and API endpoints.
+- A certificate is requested *in each region* for the API endpoints. While the certs are being issued for the to protect the same domain and subdomains, this **is required in each region** because [ACM's certs are region-specific](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-regional-api-custom-domain-create.html). Once the certs are issued, they can be assigned to the custom domains setup for each region's API Gateways.
+- [CloudFront distributions require using certificates issued in the us-east-1 region](https://docs.aws.amazon.com/acm/latest/userguide/acm-regions.html). Because of this requirement, the voting UI static website that is hosted on S3 with CloudFront uses the certificate issued in the `us-east-1` region.
+- [DNS validation](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html) is used for domain authentication.
+- Certificates are only requested for the domains/subdomains that are used to [slightly reduce the risk that wildcard certs can introduce](https://www.cloudconformity.com/conformity-rules/ACM/wildcard-domain-name.html).
 
 ## Election simulation
 
