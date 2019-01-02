@@ -115,6 +115,9 @@ resource "aws_api_gateway_method_settings" "s" {
   depends_on = ["aws_api_gateway_deployment.api"]
 }
 
+# Stage name can be set blank
+# https://github.com/terraform-providers/terraform-provider-aws/issues/2406
+
 resource "aws_api_gateway_deployment" "api" {
   depends_on = [
     "aws_api_gateway_integration.integration",

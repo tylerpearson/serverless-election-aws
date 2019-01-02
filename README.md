@@ -146,7 +146,11 @@ To be added.
 
 ### SQS
 
-To be added.
+- SQS acts as a queue between a Lambda function triggered by the API Gateway and a Lambda function triggered by messages in the SQS queue. This takes advantages of [Lambda's recent integration support for SQS -> Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html).
+- The queue uses server-side encryption with the KMS CMK.
+- Vote updates on the DynamoDB table are idempotent, so the standard queue is used and FIFO isn't required.
+- The message retention period is bumped up to the max of 14 days, although due to the Lambda integration, the messages will be processed in near real-time.
+- Visibility timeout is set at the default 30 seconds, which is adequate for the time required for Lambda to update the record in DynamoDB.
 
 ### CloudFront and S3
 
