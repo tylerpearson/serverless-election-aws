@@ -134,9 +134,16 @@ Results {
 
 ### Route 53
 
-To be added.
+- Route 53 is used for domain registration and DNS. I registered a domain outside of the Terraform templates and used it for this demo. To use these templates, change the `domain_name` variable in the `terraform.tfvars` file to a domain that is present in your AWS account.
+- A separate [public hosted zone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html) is created at the `election` subdomain and contains all the records required for this project.
+- Route 53 is used for DNS validation of certificates issued through AWS Certificate Manager.
+- To route voters to their closest AWS region, [latency based routing is enabled](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html) to point at the API Gateway endpoints.
+- An ALIAS DNS A record for each region is created. Each record is assigned to a custom health check to verify that the region is healthy. This health check hits the API Gateway endpoint, which triggers the health check Lambda function. If a region is detected as unhealthy, traffic is automatically redirected away from the unhealthly region to provide high availabilty. When the region is detected as healthy again, traffic will automatically be enabled again.
+- Each health check measures latency, so any API degradations can be alerted upon.
 
 ### API Gateway
+
+To be added.
 
 - Currently, the API Gateway does not use a WAF. Since voting infrastructure would absolutely be a target for attacks like DDOS, a WAF would make sense to be used for rate limiting and to protect against other common attacks.
 
