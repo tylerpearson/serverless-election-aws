@@ -176,7 +176,7 @@ resource "aws_route53_health_check" "health_check" {
   failure_threshold = "2"
   request_interval  = "30"
   measure_latency   = true
-  regions           = ["us-east-1", "us-west-1", "us-west-2"]                                                                                                             # restrict the regions this checks from                                                                                            # us-east-2 isn't a supported region for health check in the US
+  regions           = ["us-east-1", "us-west-1", "us-west-2"]                                                                                                                    # restrict the regions this checks from                                                                                            # us-east-2 isn't a supported region for health check in the US
 }
 
 resource "aws_route53_record" "api" {

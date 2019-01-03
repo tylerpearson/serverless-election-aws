@@ -39,35 +39,33 @@ def select_candidate(weighted)
 end
 
 
-voters = JSON.load File.new("data/manifest.json")
+voters = JSON.load File.new("data/voters-2.json")
 
 hydra = Typhoeus::Hydra.new
 
 
 voters.each_with_index do |voter_info, index|
-  vote = { "id": voter_info['voter_id'],
+  vote = { "id": voter_info['id'],
            "candidate": select_candidate(results[voter_info['state']]) }
 
-  next if index < 1_000_000
+  break if index > 10
 
   # api_url = "https://api.election.tylerpearson.cloud/votes"
 
   # swap between east coast and west coast so the latency based routing doesn't
   # send requests all to the same api gateway
-  api_url = ["https://d5udapczef.execute-api.us-east-1.amazonaws.com/production/votes",
-             "https://fnmlzuxvtg.execute-api.us-west-1.amazonaws.com/production/votes"].sample
+  api_url = ["https://15da866s9b.execute-api.us-east-1.amazonaws.com/production/votes",
+             "https://s41mprhwc4.execute-api.us-west-1.amazonaws.com/production/votes"].sample
 
   retries ||= 0
   request = Typhoeus::Request.new(api_url, method: :post, headers: { 'Content-Type'=> 'application/json' }, body: vote.to_json)
   hydra.queue(request)
 
   if index % 1_000 == 0
-    puts index
+    puts "#{index} to #{api_url[34,4]} endpoint"
     # puts result
-    puts api_url[34,4]
   end
 
 end
-
 
 hydra.run

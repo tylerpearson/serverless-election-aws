@@ -51,6 +51,7 @@ data "aws_iam_policy_document" "vote_enqueuer_lambda_policy" {
 
     resources = [
       "${var.votes_sqs_arn}",
+      "${var.dead_letter_sqs_arn}",
     ]
   }
 
@@ -62,6 +63,17 @@ data "aws_iam_policy_document" "vote_enqueuer_lambda_policy" {
 
     resources = [
       "${var.voters_table_arn}",
+    ]
+  }
+
+  statement {
+    actions = [
+      "kms:GenerateDataKey",
+      "kms:Decrypt",
+    ]
+
+    resources = [
+      "${var.kms_arn}",
     ]
   }
 }
@@ -141,6 +153,7 @@ data "aws_iam_policy_document" "vote_processor_lambda_policy" {
 
     resources = [
       "${var.votes_sqs_arn}",
+      "${var.dead_letter_sqs_arn}",
     ]
   }
 
@@ -154,6 +167,16 @@ data "aws_iam_policy_document" "vote_processor_lambda_policy" {
     resources = [
       "${var.voters_table_arn}",
       "${var.results_table_arn}",
+    ]
+  }
+
+  statement {
+    actions = [
+      "kms:Decrypt",
+    ]
+
+    resources = [
+      "${var.kms_arn}",
     ]
   }
 }

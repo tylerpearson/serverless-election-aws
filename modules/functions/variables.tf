@@ -6,6 +6,14 @@ variable "votes_sqs_id" {
   description = "URL of the voters buffer queue"
 }
 
+variable "dead_letter_sqs_arn" {
+  description = "ARN of the dead letter queue"
+}
+
+variable "dead_letter_sqs_id" {
+  description = "URL of the dead letter queue"
+}
+
 variable "voters_table_arn" {
   description = "ARN of the voters table"
 }

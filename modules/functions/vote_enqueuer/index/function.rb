@@ -6,6 +6,8 @@ require 'aws-sdk-dynamodb'
 def handler(event:, context:)
   event_body = JSON.parse(event['body'])
 
+  puts event_body
+
   dynamo_client = Aws::DynamoDB::Client.new
   resp = dynamo_client.get_item({
     key: {

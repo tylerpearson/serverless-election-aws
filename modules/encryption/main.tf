@@ -5,7 +5,6 @@ data "aws_iam_policy_document" "kms" {
   statement {
     effect = "Allow"
 
-    // https://docs.aws.amazon.com/IAM/latest/UserGuide/list_kms.html
     actions = [
       "kms:*",
     ]
@@ -26,7 +25,6 @@ data "aws_iam_policy_document" "kms" {
   statement {
     effect = "Allow"
 
-    // https://docs.aws.amazon.com/IAM/latest/UserGuide/list_kms.html
     actions = [
       "kms:Encrypt*",
       "kms:Decrypt*",

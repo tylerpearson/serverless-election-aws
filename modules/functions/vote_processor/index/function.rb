@@ -47,4 +47,6 @@ def handler(event:, context:)
     })
   end
 
+  puts save_response.attributes
+
 end
