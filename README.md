@@ -205,7 +205,11 @@ resource "aws_cloudwatch_log_group" "vote_enqueuer_lambda_log_group" {
 
 ### KMS
 
-To be added.
+- KMS is used to encrpyt data to help protect against improper access.
+- A customer managed CMKs is created and assigned to resources that support using it for encryption, for example SQS and CloudWatch Logs.
+- Key rotation is enabled to [reduce risk](https://www.cloudconformity.com/conformity-rules/KMS/key-rotation-enabled.html).
+- [DynamoDB does not support use of customer managed CMKs](https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html), so instead the AWS managed customer master key is enabled to protect data at rest. [DynamoDB will keep the key in memory](https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html) for up to twelve hours to reduce the number of required API calls to decrypt data.
+- [KMS access is logged to CloudTrail](https://docs.aws.amazon.com/kms/latest/developerguide/logging-using-cloudtrail.html) so that an audit trail exists.
 
 ### IAM
 
