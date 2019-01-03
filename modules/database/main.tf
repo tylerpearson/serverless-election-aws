@@ -54,7 +54,7 @@ resource "aws_dynamodb_table" "voters_table" {
 
   # disable when autoscaling
   lifecycle {
-    # ignore_changes = ["read_capacity", "write_capacity"]
+    ignore_changes = ["read_capacity", "write_capacity"]
   }
 }
 
