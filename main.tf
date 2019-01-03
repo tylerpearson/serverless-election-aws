@@ -214,12 +214,8 @@ resource "aws_route53_record" "static_record" {
   type     = "A"
 
   alias {
-    name    = "${aws_cloudfront_distribution.static_website_cdn.domain_name}"
-    zone_id = "${aws_cloudfront_distribution.static_website_cdn.hosted_zone_id}"
-
-    # evaluate_target_health = true
+    name                   = "${aws_cloudfront_distribution.static_website_cdn.domain_name}"
+    zone_id                = "${aws_cloudfront_distribution.static_website_cdn.hosted_zone_id}"
     evaluate_target_health = false
   }
-
-  # depends_on = ["aws_cloudfront_distribution.static_website_cdn"]
 }

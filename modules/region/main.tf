@@ -52,7 +52,7 @@ module "sqs" {
 }
 
 module "database" {
-  source = "../database" # TODO: Change this name to "database"
+  source = "../database"
 }
 
 module "api" {

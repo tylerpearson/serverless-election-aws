@@ -182,7 +182,11 @@ The `results` function is triggered by an API request and shares the current tot
 
 ### CloudFront and S3
 
-To be added.
+- An S3 bucket is used to host the the voting UI. The bucket has [static website hosting](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html) enabled to serve the HTML, CSS, JS, and other required resources.
+- In front of the static website bucket is a CloudFront distribution to serve the resources to voters through a CDN.
+- Terraform does not yet support the ability to [designate an origin failover](https://github.com/terraform-providers/terraform-provider-aws/issues/6547). For the high availabilty required to support an election, this would want to be enabled in case [any issues with S3](https://aws.amazon.com/message/41926/) arise.
+- Due to the global nature of CloudFront distributions, a TLS/SSL certificate is [required from the default `us-east-1` region](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html#https-requirements-aws-region). In the Terraform templates, the distribution is assigned the certificate generated in this region.
+- The distribution forces HTTPS for secure communication.
 
 ### CloudWatch Metrics and Logs
 
