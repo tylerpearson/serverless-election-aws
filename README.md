@@ -22,7 +22,7 @@
 
 This is a demo of how a national election could be done with a multi-region active-active serverless setup on AWS. It follows the *scalable webhook pattern* [as described here](https://www.jeremydaly.com/serverless-microservice-patterns-for-aws/), where a SQS queue sits between two Lambda functions to act as a buffer for any bursts in requests or protect against any write throttling on DynamoDB tables. This ensures every vote is successfully saved.
 
-Currently, it uses `us-east-1` and `us-west-1`, but the Terraform templates can be easily adjusted to use more regions, if desired. [Latency-based routing](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-latency) is used in Route 53 to guide incoming requests to the voters's closest AWS region. Route 53 health checks are in place to detect issues with the API and redirect traffic to another region, if neccessary.
+Currently, it uses `us-east-1` and `us-west-1`, but the Terraform templates can be easily adjusted to use more regions, if desired. [Latency-based routing](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-latency) is used in Route 53 to guide incoming requests to the voter's closest AWS region. Route 53 health checks are in place to detect issues with the API and redirect traffic to another region, if necessary.
 
 After the request comes into the region, [API Gateway](https://aws.amazon.com/api-gateway/) triggers a Lambda function that places the vote into an SQS queue. Downstream, a second Lambda function polls the SQS queue and saves the vote to the DynamoDB tables. These Lambda functions use the recently announced [support for Ruby](https://aws.amazon.com/blogs/compute/announcing-ruby-support-for-aws-lambda/).
 
@@ -122,7 +122,7 @@ StateCandidateIndex {
 
 ### Results table
 
-The `Results` table is a summary table that keeps track of the number of votes cast for each candidate in each state. As votes are cast, the count is incremenented on the item for the candidate in the voter's state. This makes it easier to see the number of votes cast on Election Day and during early voting. The `Voters` table should be relied on as the source of truth for votes cast and the `Results` table should be used as an estimate due to the [risks involved with atomic counters](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters).
+The `Results` table is a summary table that keeps track of the number of votes cast for each candidate in each state. As votes are cast, the count is incremenent on the item for the candidate in the voter's state. This makes it easier to see the number of votes cast on Election Day and during early voting. The `Voters` table should be relied on as the source of truth for votes cast and the `Results` table should be used as an estimate due to the [risks involved with atomic counters](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters).
 
 ```js
 Results {
@@ -138,13 +138,18 @@ Results {
 - A separate [public hosted zone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html) is created at the `election` subdomain and contains all the records required for this project.
 - Route 53 is used for DNS validation of certificates issued through AWS Certificate Manager.
 - To route voters to their closest AWS region, [latency based routing is enabled](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html) to point at the API Gateway endpoints.
-- An ALIAS DNS A record for each region is created. Each record is assigned to a custom health check to verify that the region is healthy. This health check hits the API Gateway endpoint, which triggers the health check Lambda function. If a region is detected as unhealthy, traffic is automatically redirected away from the unhealthly region to provide high availabilty. When the region is detected as healthy again, traffic will automatically be enabled again.
+- An ALIAS DNS record for each region is created. Each record is assigned to a custom health check to verify that the region is healthy. This health check hits the API Gateway endpoint, which triggers the health check Lambda function. If a region is detected as unhealthy, traffic is automatically redirected away from the unhealthy region to provide high availability. When the region is detected as healthy again, traffic will automatically be enabled again.
 - Each health check measures latency, so any API degradations can be alerted upon.
 
 ### API Gateway
 
-To be added.
-
+- API Gateway is used to route HTTP requests to the Lambda functions. Each API Gateway is regional (vs edge) and exists solely in the region it was deployed in. By using latency based routing with Route 53, requests are directed to the voter's closest region. This allows redundancy and automatic failover.
+- There are three primary endpoints:
+  1. `GET /health` - Used by the Route 53 health checks to verify a region's health.
+  1. `GET /votes` - Triggers the `results` Lambda function and returns a JSON response of the current election results by state and candidate.
+  1. `POST /votes` - Receives a JSON payload with the vote that is cast by the the voter. This payload looks like `{ id: "163uc-3NQXD-Wgfgg", candidate: "Hillary Clinton" }`. Additionally a `OPTIONS` endpoint exists to [enable CORS requests](https://serverless.com/blog/cors-api-gateway-survival-guide/) sent by JavaScript in the Voting UI website. The location of the website is whitelisted as a permitted origin.
+- CloudWatch Logs and CloudWatch Metrics are enabled for better visibility into requests and performance.
+- One stage exists: `production`. Additional ones could easily be created for testing.
 - Currently, the API Gateway does not use a WAF. Since voting infrastructure would absolutely be a target for attacks like DDOS, a WAF would make sense to be used for rate limiting and to protect against other common attacks.
 
 ### Lambda
@@ -153,6 +158,7 @@ To be added.
 - The default max number of concurrent invocations is 1,000. This would want to be bumped up before votes are cast to protect against rate limiting. It is critical for the `vote_enqueuer` function to operate properly every time to ensure that the vote is properly registered, so it would likely make sense to allocate reserved executions. Since messages are passed to the SQS queue, the downstream `vote_processor` functions can back up some without a negative impact (similar to how there is some time between polls closing on Election Day and the results being counted).
 - The functions take advantage of the [new support for the Ruby language](https://aws.amazon.com/blogs/compute/announcing-ruby-support-for-aws-lambda/).
 - Logs are output to CloudWatch and encrypted.
+- X-Ray support for Ruby in Lambda is [coming soon](https://aws.amazon.com/about-aws/whats-new/2018/11/aws-lambda-supports-ruby/), so is unfortunately not enabled.
 
 #### Vote enqueuer function
 
@@ -164,7 +170,7 @@ When a vote is cast from the voting UI website, JavaScript triggers a POST HTTP 
 
 #### Vote processor function
 
-When a message containing the vote information is sent to the SQS queue, a downstream Lambda function called `vote_processor` consumes the message. This function will update the voter's item in the `Voters` DynamoDB table to include the time the vote was cast and who the candidate voted for. Additionally, this function increments the candidate's count in the `Results` table.
+When a message containing the vote information is sent to the SQS queue, a downstream Lambda function called `vote_processor` consumes the message. This function will update the voter's item in the `Voters` DynamoDB table to include the time the vote was cast and who the candidate voted for. Additionally, this function increments the candidate's count in the `Results` table. Since the `Results` table is only used for estimates, there isn't a need to use the newly announced [DynamoDB transactions](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transactions.html) to guarantee the writes to both tables succeed.
 
 If an exception occurs, for example if the DynamoDB tables are under-provisioned and a write or read fails, the message will be placed back on the SQS queue and [retried twice](https://docs.aws.amazon.com/lambda/latest/dg/retries-on-errors.html). If the function continues to fail, [the message is sent to a Dead Letter Queue](https://docs.aws.amazon.com/lambda/latest/dg/dlq.html) and can be reviewed to make sure that all votes cast are properly registered.
 
@@ -181,17 +187,16 @@ The `results` function is triggered by an API request and shares the current tot
 - SQS acts as a queue between a Lambda function triggered by the API Gateway and a Lambda function triggered by messages in the SQS queue. This takes advantages of [Lambda's recent integration support for SQS -> Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html).
 - The queue uses server-side encryption with the KMS CMK. This protects against a burst of messages that could overwhelm writes to the DynamoDB table before autoscaling kicks in.
 - Vote updates on the DynamoDB table are idempotent, so the standard queue is used and FIFO isn't required.
-- If the Lambda function is not able to process the message sucessfully after two attempts, the message is passed to the dead letter queue and would be manually reviewed.
+- If the Lambda function is not able to process the message successfully after two attempts, the message is passed to the dead letter queue and would be manually reviewed.
 - The message retention period is set at three days, although due to the Lambda integration, the messages will be processed in near real-time. For the dead letter queue, the retention period is the maximum seven days.
 - Visibility timeout is set at the default 30 seconds, which is adequate for the time required for Lambda to update the record in DynamoDB.
 - If the queue is changed to FIFO, [SQS deduping](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/using-messagededuplicationid-property.html) should be done on the messages to prevent multiple votes being cast if there is a delay between a vote being cast and a vote being saved to the database. The voter id should be used as the deduplication id.
-- CloudWatch alerts should be setup to notify if the queues start to back up.
 
 ### CloudFront and S3
 
 - An S3 bucket is used to host the the voting UI. The bucket has [static website hosting](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html) enabled to serve the HTML, CSS, JS, and other required resources.
 - In front of the static website bucket is a CloudFront distribution to serve the resources to voters through a CDN.
-- Terraform does not yet support the ability to [designate an origin failover](https://github.com/terraform-providers/terraform-provider-aws/issues/6547). For the high availabilty required to support an election, this would want to be enabled in case [any issues with S3](https://aws.amazon.com/message/41926/) arise.
+- Terraform does not yet support the ability to [designate an origin failover](https://github.com/terraform-providers/terraform-provider-aws/issues/6547). For the high availability required to support an election, this would want to be enabled in case [any issues with S3](https://aws.amazon.com/message/41926/) arise.
 - Due to the global nature of CloudFront distributions, a TLS/SSL certificate is [required from the default `us-east-1` region](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html#https-requirements-aws-region). In the Terraform templates, the distribution is assigned the certificate generated in this region.
 - The distribution forces HTTPS for secure communication.
 
@@ -212,7 +217,7 @@ resource "aws_cloudwatch_log_group" "vote_enqueuer_lambda_log_group" {
 
 ### KMS
 
-- KMS is used to encrpyt data to help protect against improper access.
+- KMS is used to encrypt data to help protect against improper access.
 - A customer managed CMKs is created and assigned to resources that support using it for encryption, for example SQS and CloudWatch Logs.
 - Key rotation is enabled to [reduce risk](https://www.cloudconformity.com/conformity-rules/KMS/key-rotation-enabled.html).
 - [DynamoDB does not support use of customer managed CMKs](https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html), so instead the AWS managed customer master key is enabled to protect data at rest. [DynamoDB will keep the key in memory](https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html) for up to twelve hours to reduce the number of required API calls to decrypt data.
@@ -264,5 +269,5 @@ A JSON API endpoint with real-time results is located at https://api.election.ty
 - In something as critical as a Presidential election, it would likely make sense to use all four regions that currently exist in the United States. Tweak `main.tf` to add additional regions.
 - The code currently doesn't support write-in votes and assumes that five presidential candidates (Trump, Clinton, Johnson, Stein, McMullin) are on the ballot in every state, which isn't the case.
 - While the results are broken down by state, this demo assumes shifting the management of the election to some sort of central federal agency that manages voting across the country instead of the individual states' responsibility.
-- There's a ton of additional functionality and services that could be setup and used (CloudWatch alarms for notifications of issues, GuardDuty and CloudTrail for security, X-Ray for better visibility in the Lambda functions, etc.) that isn't included. I timeboxed many parts of this demo in the sake of time.
+- There's a ton of additional functionality and services that could be setup and used (CloudWatch alarms for notifications of issues, GuardDuty and CloudTrail for security, X-Ray for better visibility, etc.) that isn't included. I timeboxed many parts of this demo in the sake of time.
 
