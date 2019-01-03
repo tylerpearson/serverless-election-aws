@@ -102,7 +102,7 @@ resource "aws_api_gateway_method" "method" {
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_method_settings" "s" {
+resource "aws_api_gateway_method_settings" "settings" {
   rest_api_id = "${aws_api_gateway_rest_api.api.id}"
   stage_name  = "${local.stage_name}"
   method_path = "*/*"
@@ -112,11 +112,8 @@ resource "aws_api_gateway_method_settings" "s" {
     logging_level   = "INFO"
   }
 
-  depends_on = ["aws_api_gateway_deployment.api"]
+  depends_on = ["aws_api_gateway_stage.production"]
 }
-
-# Stage name can be set blank
-# https://github.com/terraform-providers/terraform-provider-aws/issues/2406
 
 resource "aws_api_gateway_deployment" "api" {
   depends_on = [
@@ -124,7 +121,14 @@ resource "aws_api_gateway_deployment" "api" {
   ]
 
   rest_api_id = "${aws_api_gateway_rest_api.api.id}"
-  stage_name  = "${local.stage_name}"
+  stage_name  = ""
+}
+
+resource "aws_api_gateway_stage" "production" {
+  stage_name           = "${local.stage_name}"
+  rest_api_id          = "${aws_api_gateway_rest_api.api.id}"
+  deployment_id        = "${aws_api_gateway_deployment.api.id}"
+  xray_tracing_enabled = true
 }
 
 resource "aws_api_gateway_integration" "integration" {
@@ -159,20 +163,20 @@ resource "aws_api_gateway_domain_name" "gw_domain_name" {
 
 resource "aws_api_gateway_base_path_mapping" "app" {
   api_id      = "${aws_api_gateway_rest_api.api.id}"
-  stage_name  = "${aws_api_gateway_deployment.api.stage_name}"
+  stage_name  = "${aws_api_gateway_stage.production.stage_name}"
   domain_name = "${aws_api_gateway_domain_name.gw_domain_name.domain_name}"
 }
 
 resource "aws_route53_health_check" "health_check" {
   reference_name    = "${data.aws_region.current.name} API Gateway check"
-  fqdn              = "${replace(replace(aws_api_gateway_deployment.api.invoke_url, "https://", ""), "/${aws_api_gateway_deployment.api.stage_name}", "")}"
+  fqdn              = "${replace(replace(replace(aws_api_gateway_deployment.api.invoke_url, "https://", ""), "/${aws_api_gateway_stage.production.stage_name}/", ""), "/", "")}"
   port              = 443
   type              = "HTTPS"
-  resource_path     = "/${aws_api_gateway_deployment.api.stage_name}${aws_api_gateway_resource.health_check_resource.path}"
+  resource_path     = "/${aws_api_gateway_stage.production.stage_name}${aws_api_gateway_resource.health_check_resource.path}"
   failure_threshold = "2"
   request_interval  = "30"
   measure_latency   = true
-  regions           = ["us-east-1", "us-west-1", "us-west-2"]                                                                                               # restrict the regions this checks from                                                                                            # us-east-2 isn't a supported region for health check in the US
+  regions           = ["us-east-1", "us-west-1", "us-west-2"]                                                                                                             # restrict the regions this checks from                                                                                            # us-east-2 isn't a supported region for health check in the US
 }
 
 resource "aws_route53_record" "api" {
