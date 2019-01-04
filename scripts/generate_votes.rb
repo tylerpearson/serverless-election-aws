@@ -48,14 +48,12 @@ voters.each_with_index do |voter_info, index|
   vote = { "id": voter_info['id'],
            "candidate": select_candidate(results[voter_info['state']]) }
 
-  break if index > 10
-
   # api_url = "https://api.election.tylerpearson.cloud/votes"
 
   # swap between east coast and west coast so the latency based routing doesn't
   # send requests all to the same api gateway
-  api_url = ["https://15da866s9b.execute-api.us-east-1.amazonaws.com/production/votes",
-             "https://s41mprhwc4.execute-api.us-west-1.amazonaws.com/production/votes"].sample
+  api_url = ["https://8wyq0geyoh.execute-api.us-east-1.amazonaws.com/production/votes",
+             "https://6l6k7779ka.execute-api.us-west-1.amazonaws.com/production/votes"].sample
 
   retries ||= 0
   request = Typhoeus::Request.new(api_url, method: :post, headers: { 'Content-Type'=> 'application/json' }, body: vote.to_json)

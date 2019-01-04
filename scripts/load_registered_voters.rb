@@ -11,22 +11,29 @@ loaded_count = 0
 
 voters = JSON.load(File.new("data/voters-2.json"))
 
-voters.each_with_index do |voter_info, index|
+index = 0
+
+voters.each_slice(25).to_a.each do |voters_info|
   puts index if index % 1000 == 0
 
-  params = {
-    table_name: 'Voters',
-    item: voter_info
-  }
+  items_to_insert = []
+
+  voters_info.each do |vote|
+    items_to_insert <<  { put_request: { item: vote } }
+  end
 
   begin
-    # todo: change to batch insert
-    result = dynamodb.put_item(params)
-    loaded_count += 1
+    resp = dynamodb.batch_write_item({
+      request_items: {
+        'Voters' => items_to_insert,
+      },
+      return_consumed_capacity: "NONE",
+      return_item_collection_metrics: "SIZE",
+    })
+    index += 25
     # puts voter_info.to_json
   rescue  Aws::DynamoDB::Errors::ServiceError => error
     puts 'Unable to add voter'
-    puts voter_info.to_json
     puts error.message
   end
 
@@ -34,5 +41,5 @@ end
 
 
 puts "========="
-puts "Loaded voters: #{loaded_count}"
+puts "Loaded voters: #{index}"
 puts "Skipped voters: #{skipped_count}"

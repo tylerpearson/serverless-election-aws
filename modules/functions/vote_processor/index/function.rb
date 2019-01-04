@@ -26,6 +26,7 @@ def handler(event:, context:)
       update_expression: "SET #C = :c, #VA = :va"
     })
 
+    puts save_response
 
     state = save_response.attributes['state']
     candidate = save_response.attributes['candidate']
@@ -46,7 +47,4 @@ def handler(event:, context:)
       update_expression: "SET #C = #C + :a"
     })
   end
-
-  puts save_response.attributes
-
 end

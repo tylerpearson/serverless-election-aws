@@ -17,8 +17,8 @@ resource "aws_dynamodb_table" "voters_table" {
   stream_view_type = "NEW_AND_OLD_IMAGES"
 
   billing_mode   = "PROVISIONED"
-  read_capacity  = 5
-  write_capacity = 250
+  read_capacity  = 500
+  write_capacity = 500
 
   attribute {
     name = "id"

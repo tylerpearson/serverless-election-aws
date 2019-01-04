@@ -237,7 +237,7 @@ resource "aws_cloudwatch_log_group" "vote_enqueuer_lambda_log_group" {
 
 ## Election simulation
 
-The `scripts` directory contains a few Ruby scripts that can be used to load the DynamoDB tables with sample voters and voter file data. Additionally, there are scripts that are used to simulate voting that would occur on Election Day.
+The `scripts` directory contains a few Ruby scripts that can be used to load the DynamoDB tables with sample voters and voter file data. Additionally, there are scripts that are used to simulate voting that would occur during voting.
 
 ```
 .
@@ -253,7 +253,7 @@ The `scripts` directory contains a few Ruby scripts that can be used to load the
 - `Gemfile` - Script dependencies. Run `bundle install` before using the scripts to ensure the libraries are installed and ready to use.
 - `data` - A directory used to store data that the scripts will generate and consume.
 - `generate_registered_voters.rb` - Generates 1,366,692 sample voters with unique voter ids. This is 1% of the number of votes cast in the 2016 Presidential Election. Outputs to the `data` directory.
-- `load_registered_voters.rb` - Loads the sample voters generated in the above script into a DynamoDB table.
+- `load_registered_voters.rb` - Loads in batches the sample voters generated in the above script into the `Voters` DynamoDB table.
 - `populate_results_table.rb` - Populates the `results` table with base data on each state and candidate. As the votes are cast and the Lambda functions run, the counts are incremented.
 - `generate_votes.rb` - Simulates votes being cast for the 1,366,692 voters generated above. The votes cast in the simulation match the actual split of votes cast for each candidate in each state (but at 1% of what was actually cast).
 

@@ -7,7 +7,7 @@ variable "scaling_type" {
 }
 
 resource "aws_appautoscaling_target" "dynamodb_table_read_target" {
-  max_capacity       = 500
+  max_capacity       = 2000
   min_capacity       = 5
   resource_id        = "table/${var.table_name}"
   scalable_dimension = "dynamodb:${var.scaling_type}:ReadCapacityUnits"
@@ -31,7 +31,7 @@ resource "aws_appautoscaling_policy" "dynamodb_table_read_policy" {
 }
 
 resource "aws_appautoscaling_target" "dynamodb_table_write_target" {
-  max_capacity       = 1000
+  max_capacity       = 2000
   min_capacity       = 5
   resource_id        = "table/${var.table_name}"
   scalable_dimension = "dynamodb:${var.scaling_type}:WriteCapacityUnits"
