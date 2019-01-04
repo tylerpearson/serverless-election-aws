@@ -145,9 +145,9 @@ Results {
 
 - API Gateway is used to route HTTP requests to the Lambda functions. Each API Gateway is regional (vs edge) and exists solely in the region it was deployed in. By using latency based routing with Route 53, requests are directed to the voter's closest region. This allows redundancy and automatic failover.
 - There are three primary endpoints:
-  1. `GET /health` - Used by the Route 53 health checks to verify a region's health.
-  1. `GET /votes` - Triggers the `results` Lambda function and returns a JSON response of the current election results by state and candidate.
-  1. `POST /votes` - Receives a JSON payload with the vote that is cast by the the voter. This payload looks like `{ id: "163uc-3NQXD-Wgfgg", candidate: "Hillary Clinton" }`. Additionally a `OPTIONS` endpoint exists to [enable CORS requests](https://serverless.com/blog/cors-api-gateway-survival-guide/) sent by JavaScript in the Voting UI website. The location of the website is whitelisted as a permitted origin.
+  - `GET /health` - Used by the Route 53 health checks to verify a region's health.
+  - `GET /votes` - Triggers the `results` Lambda function and returns a JSON response of the current election results by state and candidate.
+  - `POST /votes` - Receives a JSON payload with the vote that is cast by the the voter. This payload looks like `{ id: "163uc-3NQXD-Wgfgg", candidate: "Hillary Clinton" }`. Additionally a `OPTIONS` endpoint exists to [enable CORS requests](https://serverless.com/blog/cors-api-gateway-survival-guide/) sent by JavaScript in the Voting UI website. The location of the website is whitelisted as a permitted origin.
 - CloudWatch Logs and CloudWatch Metrics are enabled for better visibility into requests and performance.
 - One stage exists: `production`. Additional ones could easily be created for testing.
 - Currently, the API Gateway does not use a WAF. Since voting infrastructure would absolutely be a target for attacks like DDOS, a WAF would make sense to be used for rate limiting and to protect against other common attacks.
