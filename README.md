@@ -39,20 +39,24 @@ The primary AWS services used in this setup are Lambda, API Gateway, Route 53, D
 
 The Terraform templates and code used is at [github.com/tylerpearson/serverless-election-aws](https://github.com/tylerpearson/serverless-election-aws).
 
-**Please note that this demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services. There are a lot of compelling arguments on why electronic voting should not be done.**
-
 ---
 
 ### Why Serverless?
 
 - It's highly scalable and automatically adjusts based on usage. During the peak of Election Day, there would likely be thousands of votes cast per second. A properly designed Serverless setup would be able to handle this without blinking an eye.
-- It's cost efficient. For example, in San Francisco, polls open at 7am and close at 8pm. When not between those hours there would be very little usage. With Serverless, costs will be drastically lower than infrastructure that needs to be on 24/7 during the voting period. In the context of a government-run election, this could trickle down to cost savings for tax payers.
+- It's cost efficient. For example, in San Francisco, polls open at 7am and close at 8pm. When not between those hours there would be very little usage. With Serverless, costs will be drastically lower than infrastructure that needs to be on 24/7 during the voting period. In the context of a government-run election, this could trickle down to cost savings for taxpayers.
 - It shifts operational responsibilities to AWS. AWS has some of the best teams in the world working on areas like security and operations, so by running on top of AWS, customers benefit from economies at scale.
 
 ### Why multi-region?
 
-- An election is as high stakes as it gets, so reliability, resiliency, and redudancy are paramount. You can't redo an election. Running in muliple regions allow for near instant failover in a scenario where issues arrise in a region.
+- An election is as high stakes as it gets, so reliability, resiliency, and redundancy are paramount. You can't redo an election. Running in multiple regions allow for near instant failover in a scenario where issues arise in a region.
 - AWS has four regions in the United States: `us-east-1` in Virginia, `us-east-2` in Ohio, `us-west-1` in California and `us-west-2` in Oregon that are completely isolated from each region. While these regions are open to the general public, there are two GovCloud regions in `us-east` and `us-west` that are available for government use. In the very hypothetical scenario of a presidential election running on AWS, it would be assumed that the GovCloud regions would be used due to the incredibly strict requirements that would be involved.
+
+---
+
+**Please note that this demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services. There are a lot of compelling arguments on why electronic voting should not be done.**
+
+---
 
 ## Instructions
 
@@ -81,7 +85,7 @@ Two AWS regions are used (`us-east-1` and `us-west-1`).
 ├── modules
 │   ├── api
 │   ├── database
-│   ├── encrpytion
+│   ├── encryption
 │   ├── functions
 │   ├── queue
 │   └── region
@@ -138,7 +142,7 @@ StateCandidateIndex {
 
 ### Results table
 
-The `Results` table is a summary table that keeps track of the number of votes cast for each candidate in each state. As votes are cast, the count is incremenent on the item for the candidate in the voter's state. This makes it easier to see the number of votes cast on Election Day and during early voting. The `Voters` table should be relied on as the source of truth for votes cast and the `Results` table should be used as an estimate due to the [risks involved with atomic counters](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters).
+The `Results` table is a summary table that keeps track of the number of votes cast for each candidate in each state. As votes are cast, the count is incremented on the item for the candidate in the voter's state. This makes it easier to see the number of votes cast on Election Day and during early voting. The `Voters` table should be relied on as the source of truth for votes cast and the `Results` table should be used as an estimate due to the [risks involved with atomic counters](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html#WorkingWithItems.AtomicCounters).
 
 ```js
 Results {
@@ -252,7 +256,7 @@ resource "aws_cloudwatch_log_group" "vote_enqueuer_lambda_log_group" {
 
 ### X-Ray
 
-- X-Ray is enabled on the API Gateway for improved visiblity into how the Gateway is working. It's using the default trace sample rate of 5%.
+- X-Ray is enabled on the API Gateway for improved visibility into how the Gateway is working. It's using the default trace sample rate of 5%.
 - X-Ray support for Ruby in Lambda is [coming soon](https://aws.amazon.com/about-aws/whats-new/2018/11/aws-lambda-supports-ruby/), so is unfortunately not enabled.
 
 ## Election simulation
