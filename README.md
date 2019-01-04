@@ -35,19 +35,24 @@ The DynamoDB tables exist in each region and use [Global Tables](https://aws.ama
 
 Logs are sent to CloudWatch and can act as an audit trail of the votes that have been cast.
 
-The primary AWS services used in this setup are Lambda, API Gateway, Route 53, DynamoDB, S3, CloudFront, CloudWatch, KMS, and SQS.
+The primary AWS services used in this setup are Lambda, API Gateway, Route 53, DynamoDB, S3, CloudFront, CloudWatch, KMS, SQS, and X-Ray.
 
 The Terraform templates and code used is at [github.com/tylerpearson/serverless-election-aws](https://github.com/tylerpearson/serverless-election-aws).
 
+**Please note that this demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services.**
+
+---
+
 ### Why Serverless?
+
+- It's highly scalable and automatically adjusts based on usage. During the peak of Election Day, there would likely be thousands of votes cast per second. A properly designed Serverless setup would be able to handle this without blinking an eye.
+- It's cost efficient. For example, in San Francisco, polls open at 7am and close at 8pm. When not between those hours there would be very little usage. With Serverless, costs will be drastically lower than infrastructure that needs to be on 24/7 during the voting period. In the context of a government-run election, this could trickle down to cost savings for tax payers.
+- It shifts operational responsibilities to AWS. AWS has some of the best teams in the world working on areas like security and operations, so by running on top of AWS, customers benefit from economies at scale.
 
 ### Why multi-region?
 
-### Why Terraform?
-
-### Why AWS?
-
-### Why this project?
+- An election is as high stakes as it gets, so reliability, resiliency, and redudancy are paramount. You can't redo an election. Running in muliple regions allow for near instant failover in a scenario where issues arrise in a region.
+- AWS has four regions in the United States: `us-east-1` in Virginia, `us-east-2` in Ohio, `us-west-1` in California and `us-west-2` in Oregon that are completely isolated from each region. While these regions are open to the general public, there are two GovCloud regions in `us-east` and `us-west` that are available for government use. In the very hypothetical scenario of a presidential election running on AWS, it would be assumed that the GovCloud regions would be used due to the incredibly strict requirements that would be involved.
 
 ## Instructions
 
@@ -194,13 +199,13 @@ The `results` function is triggered by an API request and shares the current tot
 
 ### SQS
 
-- SQS acts as a queue between a Lambda function triggered by the API Gateway and a Lambda function triggered by messages in the SQS queue. This takes advantages of [Lambda's recent integration support for SQS -> Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html).
+- SQS acts as a queue between a Lambda function triggered by the API Gateway and a Lambda function triggered by messages in the SQS queue. This takes advantages of [Lambda's recent integration support for SQS -> Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html). More information on how [Lambda scales with SQS is available here](https://docs.aws.amazon.com/en_us/lambda/latest/dg/scaling.html).
 - The queue uses server-side encryption with the KMS CMK. This protects against a burst of messages that could overwhelm writes to the DynamoDB table before autoscaling kicks in.
-- Vote updates on the DynamoDB table are idempotent, so the standard queue is used and FIFO isn't required.
+- Vote updates on the DynamoDB table are idempotent, so messages can be safely run more than once with no impact.
 - If the Lambda function is not able to process the message successfully after two attempts, the message is passed to the dead letter queue and would be manually reviewed.
 - The message retention period is set at three days, although due to the Lambda integration, the messages will be processed in near real-time. For the dead letter queue, the retention period is the maximum seven days.
 - Visibility timeout is set at the default 30 seconds, which is adequate for the time required for Lambda to update the record in DynamoDB.
-- If the queue is changed to FIFO, [SQS deduping](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/using-messagededuplicationid-property.html) should be done on the messages to prevent multiple votes being cast if there is a delay between a vote being cast and a vote being saved to the database. The voter id should be used as the deduplication id.
+
 
 ### CloudFront and S3
 
