@@ -1,4 +1,4 @@
-# Demo of the U.S. National Presidential Election on AWS with Serverless
+# Demo Serverless Architecture of the U.S. Presidential Election on AWS
 
 - [Overview](#overview)
 - [Instructions](#instructions)
@@ -14,6 +14,7 @@
   - [KMS](#kms)
   - [IAM](#iam)
   - [Certificate Manager](#certificate-manager)
+  - [X-Ray](#x-ray)
 - [Election simulation](#election-simulation)
 - [Website](#website)
 - [Disclaimers](#disclaimers)
@@ -38,6 +39,16 @@ The primary AWS services used in this setup are Lambda, API Gateway, Route 53, D
 
 The Terraform templates and code used is at [github.com/tylerpearson/serverless-election-aws](https://github.com/tylerpearson/serverless-election-aws).
 
+### Why Serverless?
+
+### Why multi-region?
+
+### Why Terraform?
+
+### Why AWS?
+
+### Why this project?
+
 ## Instructions
 
 To use these Terraform templates:
@@ -54,9 +65,9 @@ To destroy everything created above, run `terraform destroy`. Note that there ar
 
 ## Architecture
 
-Two regions are used (us-east-1 and us-west-1).
+Two AWS regions are used (`us-east-1` and `us-west-1`).
 
-![Diagram](diagram.png?raw=true "Architecture")
+![Diagram](assets/diagram.png?raw=true "Architecture")
 
 ## Directory structure
 
@@ -158,7 +169,6 @@ Results {
 - The default max number of concurrent invocations is 1,000. This would want to be bumped up before votes are cast to protect against rate limiting. It is critical for the `vote_enqueuer` function to operate properly every time to ensure that the vote is properly registered, so it would likely make sense to allocate reserved executions. Since messages are passed to the SQS queue, the downstream `vote_processor` functions can back up some without a negative impact (similar to how there is some time between polls closing on Election Day and the results being counted).
 - The functions take advantage of the [new support for the Ruby language](https://aws.amazon.com/blogs/compute/announcing-ruby-support-for-aws-lambda/).
 - Logs are output to CloudWatch and encrypted.
-- X-Ray support for Ruby in Lambda is [coming soon](https://aws.amazon.com/about-aws/whats-new/2018/11/aws-lambda-supports-ruby/), so is unfortunately not enabled.
 
 #### Vote enqueuer function
 
@@ -235,9 +245,14 @@ resource "aws_cloudwatch_log_group" "vote_enqueuer_lambda_log_group" {
 - [DNS validation](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html) is used for domain authentication.
 - Certificates are only requested for the domains/subdomains that are used to [slightly reduce the risk that wildcard certs can introduce](https://www.cloudconformity.com/conformity-rules/ACM/wildcard-domain-name.html).
 
+### X-Ray
+
+- X-Ray is enabled on the API Gateway for improved visiblity into how the Gateway is working. It's using the default trace sample rate of 5%.
+- X-Ray support for Ruby in Lambda is [coming soon](https://aws.amazon.com/about-aws/whats-new/2018/11/aws-lambda-supports-ruby/), so is unfortunately not enabled.
+
 ## Election simulation
 
-The `scripts` directory contains a few Ruby scripts that can be used to load the DynamoDB tables with sample voters and voter file data. Additionally, there are scripts that are used to simulate voting that would occur during voting.
+The `scripts` directory contains a few Ruby scripts that can be used to load the DynamoDB tables with sample voters and voter file data. Additionally, there are scripts that are used to simulate voting that would occur during voting. Be sure to change the region and profile name in the scripts to your own if you plan to use them.
 
 ```
 .
@@ -257,6 +272,56 @@ The `scripts` directory contains a few Ruby scripts that can be used to load the
 - `populate_results_table.rb` - Populates the `results` table with base data on each state and candidate. As the votes are cast and the Lambda functions run, the counts are incremented.
 - `generate_votes.rb` - Simulates votes being cast for the 1,366,692 voters generated above. The votes cast in the simulation match the actual split of votes cast for each candidate in each state (but at 1% of what was actually cast).
 
+### Metrics
+
+#### API Gateway
+
+![useast1count](assets/api-gateway-us-east-1-request-count.png?raw=true "us-east-1 request count")
+
+![uswest1count](assets/api-gateway-us-west-1-request-count.png?raw=true "us-west-1 request count")
+
+![gatewaylatency](assets/api-gateway-latency.png?raw=true "latency")
+
+#### DynamoDB
+
+![units](assets/dynamodb-units.png?raw=true "units")
+
+![replication latency](assets/dynamodb-replication-latency.png?raw=true "latency")
+
+![table latency](assets/dynamodb-table-latency.png?raw=true "latency")
+
+#### Lambda
+
+![stats](assets/lambda-stats.png?raw=true "lambda stats")
+
+#### SQS
+
+![stats](assets/sqs-stats.png?raw=true "sqs stats")
+
+#### X-Ray
+
+![xray](assets/xray.png?raw=true "xray")
+
+#### Billing
+
+The total cost of running the simulation was $34.05. A detailed breakdown of all the costs involved [can be viewed here](assets/aws-bill-merged.jpg). There are different tiers involved based on usage for some of these services. This means that the costs involved for running this with the 137 million voters in the 2016 Presidential Election would not simply be 100 times this amount. For example, Lambda and DynamoDB costs were low because the majority of requests were still in the free tier.
+
+By looking at the pricing for each service, we would be able to getting a pretty good estimate of costs though:
+  - 137.5 million voters in 2016 * $3.50 per million requests with API Gateway = $481.25 on API Gateway
+  - 137.5 million * $0.40 per million SQS messages = $55 on SQS messages
+  - 137.5 million * $0.20 per million Lambda requests * 2 Lambda functions = $55 on Lambda requests
+  - 102443 GB-seconds at 1% of voters. Multiply this by 100 for the full number of voters is 10244300 GB-seconds * $0.00001667 per GB-second = $170.
+
+A things to note:
+
+- Domain registration was $12 (35%).
+- 2,834,386 SQS requests was $1.13 (3%)
+- $4.82 (14%) was because I went above the free tier on DynamoDB. I'd cranked this up high to load the million voters into the DynamoDB `Voters` table without throttling. I also loaded the table twice.
+- Data Transfer was $0.20 (0.6%).
+- $10.25 (30%) was the API Gateway. During the simulation I ended up sending 2,929,659 requests. I did a few practice runs, so this is higher than the number of voters.
+- $0.26 (0.7%) was Lambda.
+- KMS was $1.15 (3%) and primarily from KMS requests.
+
 ## Website
 
 A static website hosted on S3 with a simple example UI of how voters interact with the API is located at https://election.tylerpearson.cloud.
@@ -269,5 +334,5 @@ A JSON API endpoint with real-time results is located at https://api.election.ty
 - In something as critical as a Presidential election, it would likely make sense to use all four regions that currently exist in the United States. Tweak `main.tf` to add additional regions.
 - The code currently doesn't support write-in votes and assumes that five presidential candidates (Trump, Clinton, Johnson, Stein, McMullin) are on the ballot in every state, which isn't the case.
 - While the results are broken down by state, this demo assumes shifting the management of the election to some sort of central federal agency that manages voting across the country instead of the individual states' responsibility.
-- There's a ton of additional functionality and services that could be setup and used (CloudWatch alarms for notifications of issues, GuardDuty and CloudTrail for security, X-Ray for better visibility, etc.) that isn't included. I timeboxed many parts of this demo in the sake of time.
+- There's a ton of additional functionality and services that could be setup and used (CloudWatch alarms for notifications of issues, GuardDuty and CloudTrail for security, etc.) that isn't included. I timeboxed many parts of this demo in the sake being able to have a finishing point.
 
