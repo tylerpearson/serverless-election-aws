@@ -39,7 +39,7 @@ The primary AWS services used in this setup are Lambda, API Gateway, Route 53, D
 
 The Terraform templates and code used is at [github.com/tylerpearson/serverless-election-aws](https://github.com/tylerpearson/serverless-election-aws).
 
-**Please note that this demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services.**
+**Please note that this demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services. There are a lot of compelling arguments on why electronic voting should not be done.**
 
 ---
 
@@ -278,6 +278,10 @@ The `scripts` directory contains a few Ruby scripts that can be used to load the
 - `generate_votes.rb` - Simulates votes being cast for the 1,366,692 voters generated above. The votes cast in the simulation match the actual split of votes cast for each candidate in each state (but at 1% of what was actually cast).
 
 ### Metrics
+
+The `generate_votes.rb` script will simulate votes being cast. With this script running on my MacBook Pro running in a coffee shop, this took about 25 minutes to send out the 1.3 million HTTP requests to the API Gateway.
+
+Below are screenshots from CloudWatch showing how the various AWS resources reacted to the incoming sample votes.
 
 #### API Gateway
 
