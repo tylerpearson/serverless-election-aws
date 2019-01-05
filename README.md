@@ -2,7 +2,6 @@
 
 - [Overview](#overview)
 - [Instructions](#instructions)
-- [Architecture](#architecture)
 - [Directory structure](#directory-structure)
 - [Implementation](#implementation)
   - [DynamoDB](#dynamodb)
@@ -16,12 +15,27 @@
   - [Certificate Manager](#certificate-manager)
   - [X-Ray](#x-ray)
 - [Election simulation](#election-simulation)
+- [Metrics](#metrics)
+- [Billing](#billing)
 - [Website](#website)
 - [Disclaimers](#disclaimers)
 
 ## Overview
 
-This is a demo of how a national election could be done with a multi-region active-active serverless setup on AWS. It follows the *scalable webhook pattern* [as described here](https://www.jeremydaly.com/serverless-microservice-patterns-for-aws/), where a SQS queue sits between two Lambda functions to act as a buffer for any bursts in requests or protect against any write throttling on DynamoDB tables. This ensures every vote is successfully saved.
+This is a demo and example architecture of what the U.S. Presidential Election could look like if it ran on AWS with a Serverless architecture. Additionally, there are scripts to simulate millions of votes being cast on Election Day.
+
+### Example voting flow
+
+1. Citizens register to vote using the normal process.
+1. Registered voters are loaded into the central database and a unique id is generated for each person.
+1. Before voting begins, registered voters are delivered through the mail a letter with the unique id to the address where they are registered.
+1. Instead of travelling to a polling location for voting, voters log in to the Voting website and cast their vote using the unique id that arrived in the mail.
+
+### Architecture
+
+![Diagram](assets/diagram.png?raw=true "Architecture")
+
+The architecture is multi-region active-active and follows the *scalable webhook pattern* [as described here](https://www.jeremydaly.com/serverless-microservice-patterns-for-aws/), where a SQS queue sits between two Lambda functions to act as a buffer for any bursts in requests or protect against any write throttling on DynamoDB tables. This ensures every vote is successfully saved.
 
 Currently, it uses `us-east-1` and `us-west-1`, but the Terraform templates can be easily adjusted to use more regions, if desired. [Latency-based routing](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html#routing-policy-latency) is used in Route 53 to guide incoming requests to the voter's closest AWS region. Route 53 health checks are in place to detect issues with the API and redirect traffic to another region, if necessary.
 
@@ -38,15 +52,6 @@ Logs are sent to CloudWatch and can act as an audit trail of the votes that have
 The primary AWS services used in this setup are Lambda, API Gateway, Route 53, DynamoDB, S3, CloudFront, CloudWatch, KMS, SQS, and X-Ray.
 
 The Terraform templates and code used is at [github.com/tylerpearson/serverless-election-aws](https://github.com/tylerpearson/serverless-election-aws).
-
----
-
-### Example voting flow
-
-1. Citizens register to vote using the normal process.
-1. Registered voters are loaded into the central database and a unique id is generated for each person.
-1. Before voting begins, registered voters are delivered through the mail a letter with the unique id to the address where they are registered.
-1. Instead of travelling to a polling location for voting, voters log in to the Voting website and cast their vote using the unique id that arrived in the mail.
 
 ---
 
@@ -80,12 +85,6 @@ To use these Terraform templates:
 1. The website will be located at the output of `website_url`. The API is available at the output of `api_url`. To access the region-specific APIs, use the outputs of `invocation_url`.
 
 To destroy everything created above, run `terraform destroy`. Note that there are costs associated with some of these resources if they are left on.
-
-## Architecture
-
-Two AWS regions are used (`us-east-1` and `us-west-1`).
-
-![Diagram](assets/diagram.png?raw=true "Architecture")
 
 ## Directory structure
 
