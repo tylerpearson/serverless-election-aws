@@ -59,7 +59,7 @@ The Terraform templates and code used is at [github.com/tylerpearson/serverless-
 
 - It's highly scalable and automatically adjusts based on usage. During the peak of Election Day, there would likely be thousands of votes cast per second. A properly designed Serverless setup would be able to handle this without blinking an eye.
 - It's cost efficient. With it's usage-based pricing, costs are tied very closely to the number of registered voters and votes cast.
-- It shifts operational responsibilities to AWS. AWS has some of the best teams in the world working on areas like security and operations, so by running on top of AWS, customers benefit from economies at scale.
+- It shifts operational responsibilities to AWS. AWS has some of the best teams in the world working on areas like security and operations, so by running on top of AWS, customers benefit from economies of scale.
 
 ### Why multi-region?
 
