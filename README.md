@@ -29,7 +29,7 @@ This is a demo and example architecture of what the U.S. Presidential Election c
 1. Citizens register to vote using the normal process.
 1. Registered voters are loaded into the central database and a unique id is generated for each person.
 1. Before voting begins, registered voters are delivered through the mail a letter with the unique id to the address where they are registered.
-1. Instead of travelling to a polling location for voting, voters log in to the Voting website and cast their vote using the unique id that arrived in the mail.
+1. Instead of travelling to a polling location for voting, voters log in to the [Voting website](https://election.tylerp.xyz/) and cast their vote using the unique id that arrived in the mail.
 
 ### Architecture
 
@@ -216,7 +216,7 @@ The `results` function is triggered by an API request and shares the current tot
 - KMS adds a layer of encryption to the messages.
 - Vote updates on the DynamoDB table are idempotent, so messages can be safely run more than once with no impact.
 - If the Lambda function is not able to process the message successfully after two attempts, the message is passed to the dead letter queue and would be manually reviewed.
-- The message retention period is set at three days, although due to the Lambda integration, the messages will be processed in near real-time. For the dead letter queue, the retention period is the maximum seven days.
+- The message retention period is set at three days, although due to the Lambda integration, the messages will be processed in near real-time. For the dead letter queue, the retention period is the maximum fourteen days.
 - Visibility timeout is set at the default 30 seconds, which is adequate for the time required for Lambda to update the record in DynamoDB.
 
 
@@ -334,7 +334,7 @@ By looking at the pricing for each service, we would be able to getting a pretty
   - 137.5 million * $0.20 per million Lambda requests * 2 Lambda functions = $55 on Lambda requests
   - 102443 GB-seconds at 1% of voters. Multiply this by 100 for the full number of voters is 10244300 GB-seconds * $0.00001667 per GB-second = $170.
 
-A things to note:
+A few things to note:
 
 - Domain registration was $12 (35%).
 - 2,834,386 SQS requests was $1.13 (3%)
@@ -346,15 +346,16 @@ A things to note:
 
 ## Website
 
-A static website hosted on S3 with a simple example UI of how voters interact with the API is located at https://election.tylerpearson.cloud.
+A static website hosted on S3 with a simple example UI of how voters interact with the API is located at https://election.tylerp.xyz/.
 
-A JSON API endpoint with real-time results is located at https://api.election.tylerpearson.cloud/votes.
+A JSON API endpoint with real-time results is located at https://election.tylerp.xyz/votes.
+
+![website](assets/website.png?raw=true "website")
 
 ## Disclaimers
 
 - This demo doesn't take into account whether online/electronic voting *should* be done, just how it *could* be done with current AWS services. The web [is](https://www.chicagotribune.com/suburbs/highland-park/news/ct-hpn-election-integrity-forum-tl-1102-20171031-story.html) [full](https://engineering.stanford.edu/magazine/article/david-dill-why-online-voting-danger-democracy) [of](https://www.vox.com/policy-and-politics/2018/8/13/17683666/florida-voting-system-hack-children) [opinions](https://www.politico.com/story/2018/10/13/west-virginia-voting-app-security-846130), if you're looking for that.
-- In something as critical as a Presidential election, it would likely make sense to use all four regions that currently exist in the United States. Tweak `main.tf` to add additional regions.
 - The code currently doesn't support write-in votes and assumes that five presidential candidates (Trump, Clinton, Johnson, Stein, McMullin) are on the ballot in every state, which isn't the case.
 - While the results are broken down by state, this demo assumes shifting the management of the election to some sort of central federal agency that manages voting across the country instead of the individual states' responsibility.
-- There's a ton of additional functionality and services that could be setup and used (CloudWatch alarms for notifications of issues, GuardDuty and CloudTrail for security, etc.) that isn't included. I timeboxed many parts of this demo in the sake being able to have a finishing point.
+- There's a ton of additional functionality and services that could be setup and used (CloudWatch alarms for notifications of issues, GuardDuty and CloudTrail for security, etc.) that isn't included. I timeboxed many parts of this demo for the sake of being able to have a finishing point.
 
