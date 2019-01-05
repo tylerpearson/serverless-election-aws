@@ -41,10 +41,19 @@ The Terraform templates and code used is at [github.com/tylerpearson/serverless-
 
 ---
 
+### Example voting flow
+
+1. Citizens register to vote using the normal process.
+1. Registered voters are loaded into the central database and a unique id is generated for each person.
+1. Before voting begins, registered voters are delivered through the mail a letter with the unique id to the address where they are registered.
+1. Instead of travelling to a polling location for voting, voters log in to the Voting website and cast their vote using the unique id that arrived in the mail.
+
+---
+
 ### Why Serverless?
 
 - It's highly scalable and automatically adjusts based on usage. During the peak of Election Day, there would likely be thousands of votes cast per second. A properly designed Serverless setup would be able to handle this without blinking an eye.
-- It's cost efficient. For example, in San Francisco, polls open at 7am and close at 8pm. When not between those hours there would be very little usage. With Serverless, costs will be drastically lower than infrastructure that needs to be on 24/7 during the voting period. In the context of a government-run election, this could trickle down to cost savings for taxpayers.
+- It's cost efficient. With it's usage-based pricing, costs are tied very closely to the number of registered voters and votes cast.
 - It shifts operational responsibilities to AWS. AWS has some of the best teams in the world working on areas like security and operations, so by running on top of AWS, customers benefit from economies at scale.
 
 ### Why multi-region?
@@ -204,7 +213,8 @@ The `results` function is triggered by an API request and shares the current tot
 ### SQS
 
 - SQS acts as a queue between a Lambda function triggered by the API Gateway and a Lambda function triggered by messages in the SQS queue. This takes advantages of [Lambda's recent integration support for SQS -> Lambda](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html). More information on how [Lambda scales with SQS is available here](https://docs.aws.amazon.com/en_us/lambda/latest/dg/scaling.html).
-- The queue uses server-side encryption with the KMS CMK. This protects against a burst of messages that could overwhelm writes to the DynamoDB table before autoscaling kicks in.
+- The queue protects against a burst of messages that could overwhelm writes to the DynamoDB table before autoscaling kicks in.
+- KMS adds a layer of encryption to the messages.
 - Vote updates on the DynamoDB table are idempotent, so messages can be safely run more than once with no impact.
 - If the Lambda function is not able to process the message successfully after two attempts, the message is passed to the dead letter queue and would be manually reviewed.
 - The message retention period is set at three days, although due to the Lambda integration, the messages will be processed in near real-time. For the dead letter queue, the retention period is the maximum seven days.
@@ -276,10 +286,10 @@ The `scripts` directory contains a few Ruby scripts that can be used to load the
 
 - `Gemfile` - Script dependencies. Run `bundle install` before using the scripts to ensure the libraries are installed and ready to use.
 - `data` - A directory used to store data that the scripts will generate and consume.
-- `generate_registered_voters.rb` - Generates 1,366,692 sample voters with unique voter ids. This is 1% of the number of votes cast in the 2016 Presidential Election. Outputs to the `data` directory.
+- `generate_registered_voters.rb` - Generates just over 1 million sample voters with unique voter ids. This is 1% of the number of votes cast in the 2016 Presidential Election. Outputs to the `data` directory.
 - `load_registered_voters.rb` - Loads in batches the sample voters generated in the above script into the `Voters` DynamoDB table.
 - `populate_results_table.rb` - Populates the `results` table with base data on each state and candidate. As the votes are cast and the Lambda functions run, the counts are incremented.
-- `generate_votes.rb` - Simulates votes being cast for the 1,366,692 voters generated above. The votes cast in the simulation match the actual split of votes cast for each candidate in each state (but at 1% of what was actually cast).
+- `generate_votes.rb` - Simulates votes being cast for the sample voters generated above. The votes cast in the simulation match the actual split of votes cast for each candidate in each state (but at 1% of what was actually cast).
 
 ### Metrics
 
